@@ -969,7 +969,7 @@ function route(){
 document.addEventListener("click",async e=>{
   const b=e.target.closest("button,input[type=checkbox]"); if(!b)return;
   if(b.dataset.del){ if(armed===b.dataset.del){const[c,id]=b.dataset.del.split("/");armed=null;await apagar(c,id)}else{armed=b.dataset.del;render()} return }
-  if(b.dataset.mode){const m=b.dataset.mode;if(m!==mode){setMode(m);location.hash=m==="humberto"?"humberto":"hoje"}return}
+  if(b.dataset.mode){try{localStorage.setItem("qg-mode-escolhido","1")}catch(e){}const m=b.dataset.mode;if(m!==mode){setMode(m);location.hash=m==="humberto"?"humberto":"hoje"}return}
   if(b.dataset.filtro){tarefaFiltro=b.dataset.filtro;render();return}
   if(b.dataset.copy){const a=achar(b.dataset.copy);if(!a||!a.p)return;
     const done=()=>toast("Pix copiado. Cola no WhatsApp do cliente.");
@@ -1123,8 +1123,8 @@ function iniciarDados(){
     const{data:ok,error}=await sb.rpc("cc_liberado");
     if(error||!ok){tela(true);$("#lgErr").textContent="Este e-mail ainda não tem acesso à Central de Controle. Fale com o Humberto.";await sb.auth.signOut();return}
     tela(false);
-    let salvo=null;try{salvo=localStorage.getItem("qg-mode")}catch(e){}
-    if(!salvo&&!location.hash){const m=(session.user.email||"").toLowerCase()===HUMBERTO_EMAIL?"humberto":"deborah";setMode(m);location.hash=m==="humberto"?"humberto":"hoje"}
+    let escolhido=null;try{escolhido=localStorage.getItem("qg-mode-escolhido")}catch(e){}
+    if(!escolhido&&!location.hash){const m=(session.user.email||"").toLowerCase()===HUMBERTO_EMAIL?"humberto":"deborah";setMode(m);location.hash=m==="humberto"?"humberto":"hoje"}
     if(!iniciado){iniciado=true;iniciarDados()}
   }
   $("#fLogin").addEventListener("submit",async e=>{e.preventDefault();e.stopPropagation();
