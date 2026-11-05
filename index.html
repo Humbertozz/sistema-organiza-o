@@ -1068,7 +1068,7 @@ $("#hojeTxt").textContent=new Date().toLocaleDateString("pt-BR",{weekday:"long",
 route();
 /* ---------- versão web: login e banco no Supabase ---------- */
 const SB_URL="https://eujbnvnkrbkxlkfiuapq.supabase.co", SB_KEY="sb_publishable_ca75dySWNpgUnb5VaWmoOw_FpN20ZSC";
-const HUMBERTO_EMAIL="humbertooliviera21@gmail.com";
+const HUMBERTO_EMAILS=["humbertooliviera21@gmail.com","humberto@sistema.com"];
 const sb=window.supabase?window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}):null;
 function makeDB(){
   const cache={}, subs={};
@@ -1124,7 +1124,7 @@ function iniciarDados(){
     if(error||!ok){tela(true);$("#lgErr").textContent="Este e-mail ainda não tem acesso à Central de Controle. Fale com o Humberto.";await sb.auth.signOut();return}
     tela(false);
     let escolhido=null;try{escolhido=localStorage.getItem("qg-mode-escolhido")}catch(e){}
-    if(!escolhido&&!location.hash){const m=(session.user.email||"").toLowerCase()===HUMBERTO_EMAIL?"humberto":"deborah";setMode(m);location.hash=m==="humberto"?"humberto":"hoje"}
+    if(!escolhido&&!location.hash){const m=HUMBERTO_EMAILS.includes((session.user.email||"").toLowerCase())?"humberto":"deborah";setMode(m);location.hash=m==="humberto"?"humberto":"hoje"}
     if(!iniciado){iniciado=true;iniciarDados()}
   }
   $("#fLogin").addEventListener("submit",async e=>{e.preventDefault();e.stopPropagation();
