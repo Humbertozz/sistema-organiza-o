@@ -1,0 +1,1054 @@
+<title>Central de Controle</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: cabeçalho fixo com abas; cada aba é uma coluna de painéis de trabalho, densa e escaneável. */
+:root{
+  --bg:#f3f5f4; --surface:#ffffff; --sunk:#e8ecea; --line:#d5dcd8; --fg:#17201c; --muted:#5b6862;
+  --accent:#1f5f4a; --accent-soft:#dcebe4; --accent-fg:#ffffff;
+  --ok:#2c7a4b; --ok-soft:#dff1e5; --warn:#a1640a; --warn-soft:#fbeed6; --bad:#b23a2e; --bad-soft:#f8e1de;
+  --deb:#7b3f8c; --deb-soft:#f1e4f4;
+  --f-ui:"Familjen Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-num:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111614; --surface:#18201d; --sunk:#1f2925; --line:#2d3934; --fg:#e6ece9; --muted:#97a69f;
+  --accent:#6cc4a1; --accent-soft:#1d3a30; --accent-fg:#0d1512;
+  --ok:#6fcf93; --ok-soft:#173326; --warn:#e8b25a; --warn-soft:#3a2c12; --bad:#f08a7e; --bad-soft:#3d1d19;
+  --deb:#d49ae3; --deb-soft:#33213a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111614; --surface:#18201d; --sunk:#1f2925; --line:#2d3934; --fg:#e6ece9; --muted:#97a69f;
+  --accent:#6cc4a1; --accent-soft:#1d3a30; --accent-fg:#0d1512;
+  --ok:#6fcf93; --ok-soft:#173326; --warn:#e8b25a; --warn-soft:#3a2c12; --bad:#f08a7e; --bad-soft:#3d1d19;
+  --deb:#d49ae3; --deb-soft:#33213a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-ui);font-size:15px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-block:14px 6px;flex-wrap:wrap}
+.brand{font-weight:700;font-size:20px;letter-spacing:-.01em}
+.brand span{color:var(--accent)}
+.today{font-family:var(--f-num);font-size:12.5px;color:var(--muted)}
+.topr{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.seg.mode button[aria-pressed="true"]#mDeb{color:var(--deb)}
+.seg.mode button[aria-pressed="true"]#mHum{color:var(--accent)}
+.hello{border-left:4px solid var(--deb);padding-left:12px;margin-bottom:18px}
+.hello.hum{border-left-color:var(--accent)}
+.hello h2{color:var(--deb)} .hello.hum h2{color:var(--accent)}
+.hello p{margin:0}
+nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav a{flex:none;padding:9px 12px 10px;color:var(--muted);text-decoration:none;font-weight:600;font-size:14px;border-bottom:2px solid transparent}
+nav a:hover{color:var(--fg)}
+nav a[aria-current="page"]{color:var(--fg);border-bottom-color:var(--accent)}
+nav a.deb[aria-current="page"]{border-bottom-color:var(--deb)}
+nav a.deb{color:var(--deb)}
+main{padding-block:20px 60px}
+.note{font-size:13px;color:var(--muted);padding:10px 12px;border:1px dashed var(--line);border-radius:8px;margin-bottom:16px}
+.note.err{color:var(--bad);border-color:var(--bad)}
+h2{font-size:22px;margin:0 0 4px;letter-spacing:-.01em;text-wrap:balance}
+h3{font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0;font-weight:600}
+.lead{color:var(--muted);margin:0 0 18px;max-width:62ch}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:22px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.stat b{font-family:var(--f-num);font-size:24px;font-weight:500;font-variant-numeric:tabular-nums}
+.stat small{color:var(--muted);font-size:12.5px}
+.stat.bad b{color:var(--bad)} .stat.warn b{color:var(--warn)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.list{display:flex;flex-direction:column}
+.row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-top:1px solid var(--line);min-width:0}
+.row:first-child{border-top:0}
+.row .main{flex:1;min-width:0}
+.row .t{font-weight:500;overflow-wrap:anywhere}
+.row.done .t{text-decoration:line-through;color:var(--muted)}
+.meta{display:flex;flex-wrap:wrap;gap:6px 10px;font-size:12.5px;color:var(--muted);margin-top:2px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.deb{background:var(--deb-soft);color:var(--deb)}
+.pill.acc{background:var(--accent-soft);color:var(--accent)}
+.empty{color:var(--muted);font-size:14px;padding:6px 0}
+input,select,textarea{font:inherit;font-size:14px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type="checkbox"]{width:18px;height:18px;margin-top:2px;accent-color:var(--accent);flex:none}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);min-width:0}
+form.add{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;align-items:end;padding:12px;background:var(--sunk);border-radius:10px}
+form.add .wide{grid-column:1/-1}
+button{font:inherit;font-size:14px;font-weight:600;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:8px 12px;cursor:pointer}
+button.pri{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+button.debb{background:var(--deb);color:var(--surface);border-color:var(--deb)}
+button.ghost{border-color:transparent;background:transparent;color:var(--muted);padding:4px 8px;font-weight:500;font-size:13px}
+button.ghost:hover{color:var(--fg)}
+button.ghost.arm{color:var(--bad)}
+.seg{display:inline-flex;background:var(--sunk);border-radius:8px;padding:2px}
+.seg button{border:0;background:transparent;color:var(--muted);padding:5px 10px;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgb(0 0 0 / .08)}
+.bar{height:8px;background:var(--sunk);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.proj{display:flex;flex-direction:column;gap:14px}
+.proj .desc{color:var(--muted);margin:0;max-width:70ch}
+.arch{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.arch div{background:var(--sunk);border-radius:8px;padding:10px 12px;font-size:13.5px;min-width:0}
+.arch b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:4px}
+.arch ul{margin:0;padding-left:16px}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.r,th.r{text-align:right}
+.debhead{border-left:4px solid var(--deb);padding-left:12px;margin-bottom:18px}
+.debhead h2{color:var(--deb)}
+.recharge{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;padding:10px;background:var(--deb-soft);border-radius:8px;margin-top:8px;align-items:end}
+.inline-add{display:flex;gap:6px;flex-wrap:wrap}
+.inline-add input{flex:1;min-width:140px}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:width .3s ease}}
+.pixgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.pix{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);min-width:0}
+.qr{flex:none;width:112px;height:112px;background:#ffffff;border-radius:6px;padding:4px;display:grid;place-items:center}
+.qr svg{width:100%;height:100%;display:block}
+.pix .info{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.pix code{font-family:var(--f-num);font-size:11px;color:var(--muted);overflow-wrap:anywhere;max-height:3.2em;overflow:hidden;user-select:all}
+.pix .acts{display:flex;gap:6px;flex-wrap:wrap}
+.pix .acts button{padding:6px 10px;font-size:13px}
+.editcli{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;padding:10px;background:var(--sunk);border-radius:8px;margin-top:8px;align-items:end}
+.editcli textarea{grid-column:1/-1;min-height:70px;font-family:var(--f-num);font-size:12px}
+details.camp{border-top:1px solid var(--line);padding-top:8px}
+details.camp summary{cursor:pointer;font-size:13.5px;display:flex;flex-wrap:wrap;gap:4px 6px;align-items:baseline}
+details.camp table{font-size:13px;margin-top:6px}
+input[type="file"]{padding:6px;font-size:13px}
+.agenda{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.dia{flex:none;width:64px;display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 4px;border-radius:8px;border:1px solid transparent;font-weight:500}
+.dia span{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em}.dia small{font-size:11px}
+.dia.trabalho{background:var(--ok-soft);color:var(--ok)}.dia.feriado{background:var(--warn-soft);color:var(--warn)}.dia.folga{background:var(--sunk);color:var(--muted)}
+.dia:disabled{cursor:default}
+.leadgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.lead{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--surface);min-width:0}
+.lead.feito{background:var(--sunk)}
+.lead .nm,.nm{font-size:16.5px;font-weight:600;overflow-wrap:anywhere}
+.lead .tel{font-size:20px;user-select:all;letter-spacing:.01em}
+.resbtns{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:6px}
+.resbtns button{padding:11px 8px}
+.etapas{display:flex;flex-direction:column;gap:4px}
+.etapa{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:var(--sunk);cursor:pointer;font-size:15px}
+.etapa.ok span{text-decoration:line-through;color:var(--muted)}
+.etapa.atual{background:var(--accent-soft);font-weight:600}
+.btnlink{display:inline-flex;align-self:flex-start;align-items:center;gap:6px;padding:9px 14px;border-radius:8px;background:var(--accent);color:var(--accent-fg);font-weight:600;text-decoration:none;font-size:14px}
+.btnlink:hover{filter:brightness(1.08)}
+.txtprev{margin:0;padding:10px 12px;background:var(--sunk);border-radius:8px;font-family:var(--f-num);font-size:12.5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:14px}
+.chip small{font-weight:500;font-size:11px}
+.chip.on{background:var(--bad-soft);color:var(--bad);border-color:var(--bad);border-radius:12px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;z-index:20}
+</style>
+
+<header>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">Central de <span>Controle</span></div>
+      <div class="topr"><span class="today" id="hojeTxt"></span>
+        <div class="seg mode" role="group" aria-label="Quem está usando"><button data-mode="deborah" id="mDeb">Deborah</button><button data-mode="humberto" id="mHum">Humberto</button></div></div>
+    </div>
+    <nav id="nav" aria-label="Seções">
+      <a href="#hoje" data-tab="hoje" data-m="deborah">Hoje</a>
+      <a href="#tarefas" data-tab="tarefas" data-m="deborah">Pendências</a>
+      <a href="#saldos" data-tab="saldos" data-m="deborah">Saldos</a>
+      <a href="#resultados" data-tab="resultados" data-m="deborah">Resultados</a>
+      <a href="#plumen" data-tab="plumen" data-m="deborah">Lumen ERP</a>
+      <a href="#pagencia" data-tab="pagencia" data-m="deborah">Captação</a>
+      <a href="#reunioes" data-tab="reunioes" data-m="deborah">Reuniões</a>
+      <a href="#projetos" data-tab="projetos" data-m="deborah">Projetos</a>
+      <a href="#financeiro" data-tab="financeiro" data-m="deborah">Operações externas</a>
+      <a href="#humberto" data-tab="humberto" data-m="humberto">Minha área</a>
+      <a href="#hleads" data-tab="hleads" data-m="humberto">Contatos</a>
+      <a href="#hresultados" data-tab="hresultados" data-m="humberto">Resultados</a>
+      <a href="#hprojetos" data-tab="hprojetos" data-m="humberto">Projetos</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="status" class="note">Carregando os dados do painel…</div>
+  <section id="view"></section>
+</main>
+
+<div class="toast" id="toast" hidden></div>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+const COLS=["tarefas","reunioes","projetos","financeiro","clientes","saldos","campanhas","config","leads","vendas","resultados"];
+let leadFiltro={projeto:"",status:"",q:""}, leadsAba="agencia";
+let imp=null; const openCamp=new Set();
+document.addEventListener("toggle",e=>{const d=e.target;if(d.dataset&&d.dataset.camp){d.open?openCamp.add(d.dataset.camp):openCamp.delete(d.dataset.camp)}},true);
+const S={}; COLS.forEach(c=>S[c]=[]);
+let db=null, tab="hoje", tarefaFiltro="todos", armed=null, openRecharge=null, openEdit=null, mode="deborah";
+const HUM_TABS=["humberto","hleads","hresultados","hprojetos"];
+try{ if(localStorage.getItem("qg-mode")==="humberto") mode="humberto"; }catch(e){}
+function saudacao(){const h=new Date().getHours();return h<12?"Bom dia":h<18?"Boa tarde":"Boa noite"}
+const $=s=>document.querySelector(s);
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad=n=>String(n).padStart(2,"0");
+const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const hoje=()=>iso(new Date());
+const addDays=(s,n)=>{const d=new Date(s+"T12:00:00");d.setDate(d.getDate()+n);return iso(d)};
+const addMonth=s=>{const d=new Date(s+"T12:00:00");const day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+1);const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(day,last));return iso(d)};
+const br=s=>{if(!s)return"";const[y,m,d]=s.split("-");return d+"/"+m};
+const brl=v=>(Number(v)||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const DIAS=["dom","seg","ter","qua","qui","sex","sáb"];
+const dia=s=>DIAS[new Date(s+"T12:00:00").getDay()];
+function prazoPill(p,feito){
+  if(!p||feito)return"";
+  const h=hoje();
+  if(p<h)return`<span class="pill bad">atrasado · ${br(p)}</span>`;
+  if(p===h)return`<span class="pill warn">hoje</span>`;
+  if(p===addDays(h,1))return`<span class="pill acc">amanhã</span>`;
+  return`<span class="pill">${dia(p)} ${br(p)}</span>`;
+}
+function setStatus(msg,err){const el=$("#status");if(!msg){el.hidden=true;return}el.hidden=false;el.textContent=msg;el.classList.toggle("err",!!err)}
+
+/* ---------- escrita ---------- */
+async function salvar(col,id,data){
+  if(!db){setStatus("Sem conexão com o banco do painel. Abra o painel logado na conta.",true);return}
+  try{ if(id) await db.collection(col).doc(id).update(data); else await db.collection(col).add(data); }
+  catch(e){ setStatus("Não deu pra salvar: "+(e&&e.message||"erro")+". Tente de novo.",true); }
+}
+async function apagar(col,id){ try{await db.collection(col).doc(id).delete()}catch(e){setStatus("Não deu pra apagar. Tente de novo.",true)} }
+function delBtn(col,id){if(mode==="humberto")return"";const k=col+"/"+id;return`<button class="ghost ${armed===k?"arm":""}" data-del="${k}">${armed===k?"Confirmar exclusão":"Excluir"}</button>`}
+
+/* ---------- views ---------- */
+function vTarefaRow(t){
+  const d=t.status==="feita";
+  const quem=t.responsavel==="Deborah"?`<span class="pill deb">Deborah</span>`:`<span class="pill">Humberto</span>`;
+  const proj=t.projeto?`<span>${esc(t.projeto)}</span>`:"";
+  if(mode==="humberto")return`<div class="row ${d?"done":""}"><input type="checkbox" id="tk-${esc(t.id)}" data-toggle="${esc(t.id)}" ${d?"checked":""} aria-label="Concluir ${esc(t.titulo)}"><div class="main"><label class="t" for="tk-${esc(t.id)}">${esc(t.titulo)}</label><div class="meta">${d?'<span class="pill ok">concluída</span>':(prazoPill(t.prazo,d)||(t.prazo?br(t.prazo):"sem prazo"))}${proj}</div></div></div>`;
+  return`<div class="row ${d?"done":""}"><input type="checkbox" id="tk-${esc(t.id)}" data-toggle="${esc(t.id)}" ${d?"checked":""} aria-label="Concluir">
+  <div class="main"><label class="t" for="tk-${esc(t.id)}">${esc(t.titulo)}</label><div class="meta">${quem}${prazoPill(t.prazo,d)}${proj}</div></div>${delBtn("tarefas",t.id)}</div>`;
+}
+function ordTarefas(a){return a.slice().sort((x,y)=>(x.status==="feita")-(y.status==="feita")||String(x.prazo||"9999").localeCompare(String(y.prazo||"9999")))}
+function vReuniaoRow(r){
+  return`<div class="row"><div class="main"><div class="t">${esc(r.titulo)}</div><div class="meta">
+  <span class="num">${dia(r.data)} ${br(r.data)}${r.hora?" · "+esc(r.hora):""}</span>${r.com?`<span>com ${esc(r.com)}</span>`:""}${r.local?`<span>${esc(r.local)}</span>`:""}${r.data===hoje()?'<span class="pill warn">hoje</span>':""}</div>
+  ${r.notas?`<div class="meta">${esc(r.notas)}</div>`:""}</div>${delBtn("reunioes",r.id)}</div>`;
+}
+const temSaldo=c=>c.saldoAtual!==undefined&&c.saldoAtual!==null&&c.saldoAtual!=="";
+const limite=c=>c.alertaAbaixo?+c.alertaAbaixo:(c.valorRecarga?Math.round(c.valorRecarga*0.3):0);
+function nivel(c){
+  if(!temSaldo(c))return"sem";
+  if(+c.saldoAtual<=0)return"zerado";
+  if(limite(c)&&+c.saldoAtual<=limite(c))return"acabando";
+  return"ok";
+}
+const NIVEL_ORD={zerado:0,acabando:1,sem:2,ok:3};
+/* agenda: trabalho / feriado / folga */
+const TIPO={trabalho:{t:"Dia de trabalho",c:"ok"},feriado:{t:"Feriado · sem prospecção",c:"warn"},folga:{t:"Folga · sem alertas",c:""}};
+const agenda=()=>((S.config.find(x=>x.id==="agenda")||{}).dias)||{};
+const tipoPadrao=d=>{const w=new Date(d+"T12:00:00").getDay();return(w===0||w===6)?"folga":"trabalho"};
+const tipoDia=d=>agenda()[d]||tipoPadrao(d);
+const ehProsp=d=>tipoDia(d)==="trabalho";
+const proxProsp=d=>{let x=d;for(let i=0;i<60&&!ehProsp(x);i++)x=addDays(x,1);return x};
+const proxUtil=d=>proxProsp(addDays(d,1));
+const proxDiaTrab=d=>{let x=addDays(d,1);for(let i=0;i<60&&tipoDia(x)==="folga";i++)x=addDays(x,1);return x};
+const dataCurta=d=>dia(d)+" "+br(d);
+function agendaStrip(editavel){
+  const h=hoje(),t0=tipoDia(h),ds=[];for(let i=0;i<14;i++)ds.push(addDays(h,i));
+  return`<div class="panel" style="margin-bottom:18px"><div class="panel-head"><h3>Agenda de trabalho</h3><span class="pill ${TIPO[t0].c}">Hoje: ${TIPO[t0].t}</span></div>
+    ${editavel?`<div class="meta">Toque num dia pra trocar entre trabalho, feriado e folga. Na folga ninguém recebe alerta. No feriado não tem disparo nem cold call e as recargas fixas passam pro próximo dia útil. Contatos colocados num dia sem prospecção vão pro próximo dia de trabalho.</div>`:""}
+    <div class="agenda">${ds.map(d=>{const t=tipoDia(d);return`<button type="button" class="dia ${t}" ${editavel?`data-agenda="${d}"`:"disabled"} aria-label="${dataCurta(d)}: ${TIPO[t].t}"><span>${dia(d)}</span><b class="num">${br(d)}</b><small>${t}</small></button>`}).join("")}</div></div>`;
+}
+function bannerDia(){const h=hoje(),t=tipoDia(h);if(t==="trabalho")return"";
+  const p=proxUtil(h);return`<div class="note" style="border-style:solid;border-color:var(--${t==="folga"?"line":"warn"})">${t==="folga"?`Hoje é folga: nenhum alerta é enviado.`:`Hoje é feriado: sem disparos e cold calls.`} Próximo dia de prospecção: <b>${dataCurta(p)}</b>.</div>`}
+/* recarga fixa por dia da semana */
+const DSEM=["dom","seg","ter","qua","qui","sex","sáb"];
+const pulaRecarga=d=>{let x=d;for(let i=0;i<30&&tipoDia(x)!=="trabalho";i++)x=addDays(x,1);return x};
+function proxRecarga(c){const ds=(c.recargaDias||[]).map(Number);if(!ds.length)return"";
+  let x=c.ultimaRecarga?addDays(c.ultimaRecarga,1):hoje();
+  for(let i=0;i<14;i++){if(ds.includes(new Date(x+"T12:00:00").getDay()))return pulaRecarga(x);x=addDays(x,1)}return""}
+const recargaDevida=c=>{const p=proxRecarga(c);return!!p&&p<=hoje()};
+const precisa=c=>["zerado","acabando"].includes(nivel(c))||recargaDevida(c)||!!agRecHoje(c)||!!pedido(c);
+function saldoStatus(c){
+  if(pedido(c))return`<span class="pill bad">Humberto pediu saldo</span>`;
+  if(agRecHoje(c))return`<span class="pill warn">recarga agendada hoje</span>`;
+  if(recargaDevida(c))return`<span class="pill warn">recarga fixa hoje</span>`;
+  const n=nivel(c);
+  if(n==="zerado")return`<span class="pill bad">sem saldo</span>`;
+  if(n==="acabando")return`<span class="pill warn">acabando</span>`;
+  if(n==="sem")return`<span class="pill">sem informação</span>`;
+  return`<span class="pill ok">ok</span>`;
+}
+const desatualizado=c=>!c.saldoAtualizadoEm||Date.now()-c.saldoAtualizadoEm>24*3600e3;
+function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>{t.hidden=true},2200)}
+function quando(ms){if(!ms)return"";const d=new Date(ms);return pad(d.getDate())+"/"+pad(d.getMonth()+1)+" "+pad(d.getHours())+":"+pad(d.getMinutes())}
+function saldoAtualTxt(c){return c.saldoAtual!==undefined&&c.saldoAtual!==null&&c.saldoAtual!==""?`<span class="num">${brl(c.saldoAtual)}</span><div class="meta">atualizado ${quando(c.saldoAtualizadoEm)}</div>`:'<span class="meta">não informado</span>'}
+function makeQR(code){if(typeof window.qrcode!=="function")return null;try{const q=window.qrcode(0,"M");q.addData(code);q.make();return q}catch(e){return null}}
+const SLOT_NOME={unico:"",manha:"Manhã",tarde:"Tarde",noite:"Noite"};
+const slots=c=>(+c.recargasDia===3)?["manha","tarde","noite"]:["unico"];
+const pixDe=(c,s)=>(c.pix&&c.pix[s]&&c.pix[s].codigo)?c.pix[s]:null;
+const pixAgora=(c,s)=>{const p=pixDe(c,s);return p&&(p.paraDia||"")<=hoje()?p:null};
+const pixesProntos=c=>slots(c).filter(s=>pixAgora(c,s));
+const agRec=c=>c.recargaAgendada&&c.recargaAgendada.data?c.recargaAgendada:null;
+const agRecHoje=c=>{const a=agRec(c);return a&&a.data<=hoje()&&!slots(c).some(s=>pixDe(c,s))?a:null};
+const pedido=c=>c.pedidoSaldo&&+c.pedidoSaldo.em?c.pedidoSaldo:null;
+const valorPix=(c,p)=>(p&&+p.valor)||+c.valorRecarga||0;
+const achar=k=>{const[id,s]=k.split("|");const c=S.clientes.find(x=>x.id===id);return c?{c,s,p:pixDe(c,s)}:null};
+function pixCard(c,s){
+  const p=pixDe(c,s); const velho=p.geradoEm&&p.geradoEm<addDays(hoje(),-1); const k=c.id+"|"+s;
+  return`<div class="pix"><div class="qr" data-qr="${esc(k)}" aria-label="QR Code Pix de ${esc(c.nome)}"></div>
+    <div class="info"><div class="t">${esc(c.nome)}${SLOT_NOME[s]?` <span class="pill acc">${SLOT_NOME[s]}</span>`:""}</div>
+      <div class="meta">${valorPix(c,p)?`<span class="num">${brl(valorPix(c,p))}</span>`:""}${(p.paraDia||"")>hoje()?`<span class="pill acc">pra ${dataCurta(p.paraDia)}</span>`:""}<span>gerado ${br(p.geradoEm)}</span>${velho?'<span class="pill warn">confira a validade</span>':""}</div>
+      <code>${esc(p.codigo)}</code>
+      <div class="acts"><button type="button" data-copy="${esc(k)}">Copiar Pix</button><button type="button" data-dl="${esc(k)}">Baixar QR</button></div></div></div>`;
+}
+function fillQRs(){document.querySelectorAll("[data-qr]").forEach(el=>{const a=achar(el.dataset.qr);const q=a&&a.p&&makeQR(a.p.codigo);el.innerHTML=q?q.createSvgTag({cellSize:4,margin:0,scalable:true}):'<span class="meta" style="color:#555">QR indisponível</span>'})}
+async function baixarQR(c,s){
+  const p=pixDe(c,s); const q=p&&makeQR(p.codigo);if(!q){toast("Não consegui gerar o QR. Use o Copiar Pix.");return}
+  const n=q.getModuleCount(),cell=Math.floor(520/n),size=n*cell,W=size+80,H=size+170;
+  const cv=document.createElement("canvas");cv.width=W;cv.height=H;const g=cv.getContext("2d");
+  g.fillStyle="#ffffff";g.fillRect(0,0,W,H);g.fillStyle="#000000";
+  for(let r=0;r<n;r++)for(let k=0;k<n;k++)if(q.isDark(r,k))g.fillRect(40+k*cell,40+r*cell,cell,cell);
+  g.textAlign="center";g.font="600 28px sans-serif";g.fillText(c.nome+(SLOT_NOME[s]?" ("+SLOT_NOME[s]+")":"")+(valorPix(c,p)?" · "+brl(valorPix(c,p)):""),W/2,size+95);
+  g.font="20px sans-serif";g.fillStyle="#444444";g.fillText("Pix para saldo de anúncios (Meta) · gerado "+br(p.geradoEm),W/2,size+135);
+  const blob=await new Promise(r=>cv.toBlob(r,"image/png"));
+  const dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null;
+  if(!dl){toast("Download indisponível aqui. Use o Copiar Pix.");return}
+  try{await dl.save({filename:"pix-"+c.id+(s!=="unico"?"-"+s:"")+".png",data:blob});toast("QR salvo")}catch(e){if(e&&e.code!=="declined")toast("Não deu pra salvar o QR.")}
+}
+const clientesOrd=()=>S.clientes.slice().sort((a,b)=>NIVEL_ORD[nivel(a)]-NIVEL_ORD[nivel(b)]||String(a.nome).localeCompare(String(b.nome)));
+function linhaSaldo(c){return`<div class="row"><div class="main"><div class="t">${esc(c.nome)}</div><div class="meta">${temSaldo(c)?`<span class="num">${brl(c.saldoAtual)}</span>`:""}${c.valorRecarga?`<span class="num">colocar ${brl(c.valorRecarga)}</span>`:""}${pixesProntos(c).length?`<span class="pill ok">Pix pronto${slots(c).length>1?" "+pixesProntos(c).length+"/3":""}</span>`:'<span class="pill">sem Pix</span>'}</div></div>${saldoStatus(c)}</div>`}
+
+function vHoje(){
+  const h=hoje(), amanha=addDays(h,1), em3=addDays(h,3);
+  const abertas=S.tarefas.filter(t=>t.status!=="feita");
+  const atras=abertas.filter(t=>t.prazo&&t.prazo<h);
+  const doDia=abertas.filter(t=>t.prazo&&t.prazo<=amanha);
+  const reun=S.reunioes.filter(r=>r.data>=h&&r.data<=addDays(h,7)).sort((a,b)=>(a.data+(a.hora||"")).localeCompare(b.data+(b.hora||"")));
+  const saldos=clientesOrd().filter(precisa);
+  const contas=S.financeiro.filter(f=>f.status!=="pago"&&f.venc&&f.venc<=em3).sort((a,b)=>a.venc.localeCompare(b.venc));
+  const minhas=doDia.filter(t=>t.responsavel==="Deborah"), dele=doDia.filter(t=>t.responsavel!=="Deborah");
+  return`<div class="hello"><h2>${saudacao()}, Deborah</h2><p class="lead">O que precisa de atenção até amanhã: suas pendências, as do Humberto, recargas, reuniões e contas.</p></div>
+  ${bannerDia()}${agendaStrip(true)}
+  <div class="stats">
+    <div class="stat ${atras.length?"bad":""}"><b>${atras.length}</b><small>pendências atrasadas</small></div>
+    <div class="stat"><b>${abertas.length}</b><small>pendências abertas</small></div>
+    <div class="stat ${vendasInfo().vh.length?"":"bad"}"><b>${vendasInfo().vh.length}</b><small>vendas hoje</small></div>
+    <div class="stat"><b>${reun.filter(r=>r.data===h).length}</b><small>reuniões hoje</small></div>
+    <div class="stat ${saldos.length?"warn":""}"><b>${saldos.length}</b><small>saldos acabando</small></div>
+    <div class="stat ${contas.some(c=>c.venc<h)?"bad":""}"><b>${contas.length}</b><small>contas em 3 dias</small></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><div class="panel-head"><h3>Suas pendências</h3><a href="#tarefas" class="pill acc">ver todas</a></div>
+      <form class="inline-add" id="fDebTarefa"><input id="dTitulo" placeholder="Nova pendência" aria-label="Nova pendência" required><select id="dResp" aria-label="Para quem"><option>Deborah</option><option>Humberto</option></select><input id="dPrazo" type="date" aria-label="Prazo" style="flex:0 0 auto;min-width:0"><button class="debb" type="submit">Adicionar</button></form>
+      <div class="list">${minhas.length?ordTarefas(minhas).map(vTarefaRow).join(""):'<div class="empty">Nada seu vencendo até amanhã.</div>'}</div></div>
+    <div class="panel"><div class="panel-head"><h3>Lembrar o Humberto</h3></div>
+      <div class="list">${dele.length?ordTarefas(dele).map(vTarefaRow).join(""):'<div class="empty">Nada do Humberto vencendo até amanhã.</div>'}</div></div>
+    <div class="panel"><div class="panel-head"><h3>Reuniões nos próximos 7 dias</h3></div>
+      <div class="list">${reun.length?reun.map(vReuniaoRow).join(""):'<div class="empty">Nenhuma reunião marcada.</div>'}</div></div>
+    <div class="panel"><div class="panel-head"><h3>Saldos acabando</h3><a href="#saldos" class="pill deb">abrir saldos</a></div>
+      <div class="list">${saldos.length?saldos.map(linhaSaldo).join(""):'<div class="empty">Nenhum cliente com saldo acabando.</div>'}</div></div>
+    <div class="panel"><div class="panel-head"><h3>Contas e boletos</h3><a href="#financeiro" class="pill acc">operações externas</a></div>
+      <div class="list">${contas.length?contas.map(f=>`<div class="row"><div class="main"><div class="t">${esc(f.descricao)}</div><div class="meta"><span class="pill ${f.tipo==="receber"?"ok":""}">${f.tipo==="receber"?"a receber":"a pagar"}</span>${prazoPill(f.venc,false)}</div></div><span class="num">${brl(f.valor)}</span></div>`).join(""):'<div class="empty">Nada vencendo nos próximos 3 dias.</div>'}</div></div>
+  </div>`;
+}
+
+function projOptions(sel){return`<option value="">Sem projeto</option>`+S.projetos.map(p=>`<option ${p.nome===sel?"selected":""}>${esc(p.nome)}</option>`).join("")}
+function vTarefas(){
+  let lista=S.tarefas; if(tarefaFiltro!=="todos")lista=lista.filter(t=>t.responsavel===tarefaFiltro);
+  const f=b=>`aria-pressed="${tarefaFiltro===b}"`;
+  return`<h2>Pendências</h2><p class="lead">Todas as pendências do escritório, suas e do Humberto, com responsável e prazo. O Humberto vê as dele na área dele.</p>
+  <div class="panel">
+    <form class="add" id="fTarefa">
+      <label class="f wide">O que precisa ser feito<input id="tTitulo" required placeholder="Ex.: subir criativos da Harã"></label>
+      <label class="f">Responsável<select id="tResp"><option>Humberto</option><option>Deborah</option></select></label>
+      <label class="f">Prazo<input id="tPrazo" type="date"></label>
+      <label class="f">Projeto<select id="tProj">${projOptions()}</select></label>
+      <button class="pri" type="submit">Adicionar pendência</button>
+    </form>
+    <div class="panel-head"><h3>${lista.filter(t=>t.status!=="feita").length} abertas</h3>
+      <div class="seg" role="group" aria-label="Filtrar por responsável"><button data-filtro="todos" ${f("todos")}>Todos</button><button data-filtro="Humberto" ${f("Humberto")}>Humberto</button><button data-filtro="Deborah" ${f("Deborah")}>Deborah</button></div></div>
+    <div class="list">${lista.length?ordTarefas(lista).map(vTarefaRow).join(""):'<div class="empty">Nenhuma pendência ainda. Adicione a primeira no formulário acima.</div>'}</div>
+  </div>`;
+}
+
+function vReunioes(){
+  const h=hoje();
+  const prox=S.reunioes.filter(r=>r.data>=h).sort((a,b)=>(a.data+(a.hora||"")).localeCompare(b.data+(b.hora||"")));
+  const pass=S.reunioes.filter(r=>r.data<h).sort((a,b)=>b.data.localeCompare(a.data)).slice(0,10);
+  return`<h2>Reuniões</h2><p class="lead">Agenda do escritório. O convite pro cliente continua indo pelo WhatsApp.</p>
+  <div class="panel">
+    <form class="add" id="fReuniao">
+      <label class="f wide">Assunto<input id="rTitulo" required placeholder="Ex.: alinhamento lançamento Barra Park"></label>
+      <label class="f">Com quem<input id="rCom" placeholder="Cliente ou pessoa"></label>
+      <label class="f">Data<input id="rData" type="date" required></label>
+      <label class="f">Hora<input id="rHora" type="time"></label>
+      <label class="f">Local ou link<input id="rLocal" placeholder="Meet, escritório…"></label>
+      <label class="f wide">Notas<input id="rNotas" placeholder="Pauta, o que levar"></label>
+      <button class="pri" type="submit">Marcar reunião</button>
+    </form>
+    <h3>Próximas</h3><div class="list">${prox.length?prox.map(vReuniaoRow).join(""):'<div class="empty">Nenhuma reunião marcada.</div>'}</div>
+    ${pass.length?`<h3>Já aconteceram</h3><div class="list">${pass.map(vReuniaoRow).join("")}</div>`:""}
+  </div>`;
+}
+
+function progresso(p){const e=p.etapas||[];if(!e.length)return Number(p.progresso)||0;return Math.round(100*e.filter(x=>x.feita).length/e.length)}
+function vProjetos(){
+  const ps=S.projetos.slice().sort((a,b)=>(a.ordem||99)-(b.ordem||99));
+  return`<h2>Projetos</h2><p class="lead">Arquitetura e progresso de cada projeto. O progresso sobe sozinho conforme as etapas são marcadas.</p>
+  <div class="proj">${ps.length?ps.map(p=>{
+    const pr=progresso(p);
+    const pend=S.tarefas.filter(t=>t.projeto===p.nome&&t.status!=="feita").length;
+    return`<div class="panel">
+      <div class="panel-head"><div><h2 style="font-size:19px">${esc(p.nome)}</h2>${p.status?`<span class="pill acc">${esc(p.status)}</span>`:""}</div>
+        <div class="num" style="font-size:20px">${pr}%</div></div>
+      <div class="bar" role="progressbar" aria-valuenow="${pr}" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso de ${esc(p.nome)}"><i style="width:${pr}%"></i></div>
+      ${p.descricao?`<p class="desc">${esc(p.descricao)}</p>`:""}
+      ${(p.arquitetura||[]).length?`<h3>Arquitetura</h3><div class="arch">${p.arquitetura.map(a=>`<div><b>${esc(a.camada)}</b><ul>${(a.itens||[]).map(i=>`<li>${esc(i)}</li>`).join("")}</ul></div>`).join("")}</div>`:""}
+      <div class="panel-head"><h3>Etapas</h3>${pend?`<a href="#tarefas" class="pill">${pend} pendência${pend>1?"s":""} ligada${pend>1?"s":""}</a>`:""}</div>
+      <div class="list">${(p.etapas||[]).map((e,i)=>`<div class="row ${e.feita?"done":""}"><input type="checkbox" id="et-${esc(p.id)}-${i}" data-etapa="${esc(p.id)}|${i}" ${e.feita?"checked":""}><div class="main"><label class="t" for="et-${esc(p.id)}-${i}">${esc(e.nome)}</label></div></div>`).join("")||'<div class="empty">Sem etapas ainda.</div>'}</div>
+      <form class="inline-add" data-addetapa="${esc(p.id)}"><input id="ne-${esc(p.id)}" placeholder="Nova etapa" aria-label="Nova etapa"><button type="submit">Adicionar etapa</button>${delBtn("projetos",p.id)}</form>
+    </div>`}).join(""):'<div class="empty">Nenhum projeto cadastrado.</div>'}
+    <div class="panel"><h3>Novo projeto</h3>
+      <form class="add" id="fProjeto"><label class="f">Nome<input id="pNome" required></label><label class="f">Fase<input id="pStatus" placeholder="Ex.: em construção"></label><label class="f wide">Descrição<input id="pDesc"></label><button class="pri" type="submit">Criar projeto</button></form></div>
+  </div>`;
+}
+
+function vFinanceiro(){
+  const h=hoje(); const mes=h.slice(0,7);
+  const abertos=S.financeiro.filter(f=>f.status!=="pago");
+  const recMes=abertos.filter(f=>f.tipo==="receber"&&f.venc&&f.venc.slice(0,7)<=mes).reduce((s,f)=>s+(+f.valor||0),0);
+  const pagMes=abertos.filter(f=>f.tipo==="pagar"&&f.venc&&f.venc.slice(0,7)<=mes).reduce((s,f)=>s+(+f.valor||0),0);
+  const recorr=S.financeiro.filter(f=>f.recorrente&&f.tipo==="receber").reduce((s,f)=>s+(+f.valor||0),0);
+  const atras=abertos.filter(f=>f.venc&&f.venc<h).length;
+  const ord=S.financeiro.slice().sort((a,b)=>(a.status==="pago")-(b.status==="pago")||String(a.venc).localeCompare(String(b.venc)));
+  const V=vendasInfo(), ultV=S.vendas.slice().sort((a,b)=>String(b.data).localeCompare(String(a.data))||(b.criadoEm||0)-(a.criadoEm||0)).slice(0,15);
+  return`<h2>Operações externas</h2><p class="lead">Meta: pelo menos uma venda todo dia. Registre cada venda assim que fechar; se o dia estiver passando sem venda, cobre o Humberto.</p>
+  <div class="panel" style="margin-bottom:18px;border-color:${V.vh.length?"var(--line)":"var(--bad)"}">
+    <div class="panel-head"><h3>Vendas</h3>${V.vh.length?`<span class="pill ok">${V.vh.length} hoje · ${brl(V.totH)}</span>`:'<span class="pill bad">nenhuma venda hoje</span>'}</div>
+    <div class="stats" style="margin:0">
+      <div class="stat ${V.vh.length?"":"bad"}"><b>${V.vh.length}</b><small>vendas hoje</small></div>
+      <div class="stat"><b class="num" style="font-size:19px">${brl(V.totM)}</b><small>no mês (${V.vm.length} vendas)</small></div>
+      <div class="stat"><b>${V.seq}</b><small>dias seguidos com venda</small></div>
+    </div>
+    <form class="add" id="fVenda">
+      <label class="f">Data<input id="vData" type="date" value="${hoje()}" required></label>
+      <label class="f">Cliente<input id="vCli" required placeholder="Quem comprou"></label>
+      <label class="f">De qual frente<select id="vProj"><option>Agência</option><option>Lumen ERP</option><option>Heartly</option><option>Outro</option></select></label>
+      <label class="f">Valor (R$)<input id="vValor" type="number" step="0.01" min="0" required></label>
+      <label class="f wide">O que foi vendido<input id="vDesc" placeholder="Ex.: gestão de tráfego mensal"></label>
+      <button class="debb" type="submit">Registrar venda</button>
+    </form>
+    <div class="list">${ultV.length?ultV.map(v=>`<div class="row"><div class="main"><div class="t">${esc(v.cliente)}</div><div class="meta"><span class="num">${br(v.data)}</span><span>${esc(v.projeto)}</span>${v.descricao?`<span>${esc(v.descricao)}</span>`:""}</div></div><span class="num">${brl(v.valor)}</span>${delBtn("vendas",v.id)}</div>`).join(""):'<div class="empty">Nenhuma venda registrada ainda.</div>'}</div>
+  </div>
+  <h2 style="font-size:18px">Boletos e cobranças</h2><p class="lead">Boletos a pagar, cobranças a receber e o faturamento recorrente dos clientes. Ao marcar uma recorrente como paga, ela pula pro mês seguinte.</p>
+  <div class="stats">
+    <div class="stat"><b class="num">${brl(recorr)}</b><small>faturamento recorrente / mês</small></div>
+    <div class="stat"><b class="num">${brl(recMes)}</b><small>a receber até o fim do mês</small></div>
+    <div class="stat"><b class="num">${brl(pagMes)}</b><small>a pagar até o fim do mês</small></div>
+    <div class="stat ${atras?"bad":""}"><b>${atras}</b><small>em atraso</small></div>
+  </div>
+  <div class="panel">
+    <form class="add" id="fFin">
+      <label class="f">Tipo<select id="fTipo"><option value="receber">A receber</option><option value="pagar">A pagar (boleto)</option></select></label>
+      <label class="f wide">Descrição<input id="fDesc" required placeholder="Ex.: mensalidade gestão de tráfego"></label>
+      <label class="f">Cliente ou fornecedor<input id="fCli" list="cliList"></label>
+      <label class="f">Valor (R$)<input id="fValor" type="number" step="0.01" min="0" required></label>
+      <label class="f">Vencimento<input id="fVenc" type="date" required></label>
+      <label class="f" style="flex-direction:row;align-items:center;gap:8px"><input id="fRec" type="checkbox">Recorrente mensal</label>
+      <button class="pri" type="submit">Lançar</button>
+    </form>
+    <datalist id="cliList">${S.clientes.map(c=>`<option value="${esc(c.nome)}">`).join("")}</datalist>
+    <div class="tablewrap"><table><thead><tr><th>Vence</th><th>Descrição</th><th>Tipo</th><th class="r">Valor</th><th></th></tr></thead><tbody>
+    ${ord.length?ord.map(f=>`<tr><td class="num">${f.status==="pago"?`<span class="pill ok">pago</span>`:(prazoPill(f.venc,false)||br(f.venc))}</td>
+      <td><div class="t">${esc(f.descricao)}</div><div class="meta">${f.cliente?esc(f.cliente):""}${f.recorrente?' <span class="pill acc">mensal</span>':""}</div></td>
+      <td>${f.tipo==="receber"?"Receber":"Pagar"}</td><td class="r num">${brl(f.valor)}</td>
+      <td class="r" style="white-space:nowrap">${f.status!=="pago"?`<button class="ghost" data-pago="${esc(f.id)}">Marcar ${f.tipo==="receber"?"recebido":"pago"}</button>`:""}${delBtn("financeiro",f.id)}</td></tr>`).join(""):`<tr><td colspan="5" class="empty">Nenhum lançamento ainda. Cadastre as mensalidades dos clientes como "a receber" e "recorrente mensal" para ver o faturamento recorrente.</td></tr>`}
+    </tbody></table></div>
+  </div>`;
+}
+
+/* ---------- campanhas (relatório CSV do Gerenciador) ---------- */
+const norm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/\s+/g," ").trim();
+function parseCSV(t){
+  t=t.replace(/^﻿/,"");const first=t.split(/\r?\n/)[0]||"";const d=first.split(";").length>first.split(",").length?";":(first.split("\t").length>first.split(",").length?"\t":",");
+  const rows=[];let row=[],f="",q=false;
+  for(let i=0;i<t.length;i++){const ch=t[i];
+    if(q){if(ch==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=ch}
+    else if(ch==='"')q=true; else if(ch===d){row.push(f);f=""}
+    else if(ch==="\n"||ch==="\r"){if(ch==="\r"&&t[i+1]==="\n")i++;row.push(f);rows.push(row);row=[];f=""}
+    else f+=ch}
+  if(f||row.length){row.push(f);rows.push(row)}
+  return rows.filter(r=>r.some(x=>String(x).trim()));
+}
+function num(s){s=String(s??"").replace(/[^\d,.\-]/g,"");if(!s)return 0;
+  if(s.includes(",")&&s.includes(".")){s=s.lastIndexOf(",")>s.lastIndexOf(".")?s.replace(/\./g,"").replace(",","."):s.replace(/,/g,"")}
+  else if(s.includes(","))s=s.replace(",",".");return parseFloat(s)||0}
+const COLMAP={conta:["nome da conta","account name"],nome:["nome da campanha","campaign name"],status:["veiculacao da campanha","campaign delivery","veiculacao"],
+  gasto:["valor usado","amount spent"],resultados:["resultados","results"],indicador:["indicador de resultado","result indicator"],cpr:["custo por resultado","cost per result"],
+  impressoes:["impressoes","impressions"],ini:["inicio dos relatorios","reporting starts"],fim:["termino dos relatorios","reporting ends"]};
+function lerRelatorio(texto){
+  const rows=parseCSV(texto);if(rows.length<2)throw new Error("arquivo vazio");
+  const h=rows[0].map(norm);const ix={};
+  for(const k in COLMAP){ix[k]=h.findIndex(x=>COLMAP[k].some(c=>x.startsWith(c)))}
+  if(ix.nome<0||ix.gasto<0)throw new Error("não achei as colunas de campanha e valor usado");
+  const out={};
+  rows.slice(1).forEach(r=>{const nome=(r[ix.nome]||"").trim();if(!nome)return;
+    const conta=ix.conta>=0?(r[ix.conta]||"").trim():"(conta do relatório)";
+    const o=out[conta]||(out[conta]={campanhas:[],ini:"",fim:""});
+    if(ix.ini>=0&&r[ix.ini])o.ini=o.ini&&o.ini<r[ix.ini]?o.ini:r[ix.ini].trim();
+    if(ix.fim>=0&&r[ix.fim])o.fim=o.fim&&o.fim>r[ix.fim]?o.fim:r[ix.fim].trim();
+    o.campanhas.push({conta,nome,status:ix.status>=0?(r[ix.status]||"").trim():"",gasto:num(r[ix.gasto]),resultados:ix.resultados>=0?num(r[ix.resultados]):0,
+      indicador:ix.indicador>=0?(r[ix.indicador]||"").replace(/^actions:/,"").trim():"",cpr:ix.cpr>=0?num(r[ix.cpr]):0,impressoes:ix.impressoes>=0?num(r[ix.impressoes]):0});
+  });
+  return out;
+}
+function sugerirCliente(conta){
+  const map=(S.config.find(x=>x.id==="contas")||{}).map||{};
+  if(map[conta])return map[conta];
+  const n=norm(conta);const c=S.clientes.find(c=>{const cn=norm(c.nome);return n.includes(cn)||cn.includes(n)});return c?c.id:"";
+}
+const dataBr=s=>/^\d{4}-\d{2}-\d{2}$/.test(s||"")?br(s):esc(s||"");
+const ativa=k=>{const s=norm(k.status);return s==="active"||s.startsWith("ativ")||s.startsWith("em veicula")};
+function campResumo(c){
+  const d=S.campanhas.find(x=>x.id===c.id);
+  if(!d||!(d.campanhas||[]).length)return`<div class="meta">Campanhas: nenhum relatório importado ainda.</div>`;
+  const ks=d.campanhas, tot=ks.reduce((s,k)=>s+k.gasto,0), res=ks.reduce((s,k)=>s+k.resultados,0), at=ks.filter(ativa).length;
+  return`<details class="camp" data-camp="${esc(c.id)}" ${openCamp.has(c.id)?"open":""}><summary><b>Campanhas</b> · <span class="num">${brl(tot)}</span> · <span class="num">${res.toLocaleString("pt-BR")}</span> resultados · ${at} ativa${at===1?"":"s"} <span class="meta">(${dataBr(d.inicio)}${d.fim?" a "+dataBr(d.fim):""})</span></summary>
+    <div class="tablewrap"><table><thead><tr><th>Campanha</th><th class="r">Gasto</th><th class="r">Result.</th><th class="r">Custo/result.</th></tr></thead><tbody>
+    ${ks.map(k=>`<tr><td><div class="t" style="font-size:13.5px">${esc(k.nome)}</div><div class="meta">${k.status?`<span class="pill ${ativa(k)?"ok":""}">${esc(k.status)}</span>`:""}${k.indicador?`<span>${esc(k.indicador)}</span>`:""}</div></td>
+      <td class="r num">${brl(k.gasto)}</td><td class="r num">${k.resultados.toLocaleString("pt-BR")}</td><td class="r num">${k.cpr?brl(k.cpr):(k.resultados?brl(k.gasto/k.resultados):"-")}</td></tr>`).join("")}
+    </tbody></table></div><div class="meta">Importado ${quando(d.importadoEm)}</div></details>`;
+}
+function vImport(){
+  const opts=sel=>`<option value="">Não importar</option>`+S.clientes.slice().sort((a,b)=>a.nome.localeCompare(b.nome)).map(c=>`<option value="${esc(c.id)}" ${c.id===sel?"selected":""}>${esc(c.nome)}</option>`).join("");
+  return`<div class="panel" style="margin-bottom:18px">
+    <div class="panel-head"><h3>Campanhas do Facebook</h3><span class="meta">${S.campanhas.length?`último relatório ${quando(Math.max(...S.campanhas.map(x=>x.importadoEm||0)))}`:"nenhum relatório ainda"}</span></div>
+    <p class="meta" style="margin:0">No Gerenciador de Anúncios, abra a aba Campanhas, escolha o período, clique em Exportar e salve em CSV. Pode ser um arquivo por cliente ou vários de uma vez.</p>
+    <label class="f">Relatório (.xlsx ou .csv)<input id="campFile" type="file" accept=".csv,.xlsx,.xls" multiple></label>
+    ${imp?`<div class="editcli" style="margin-top:0"><div style="grid-column:1/-1" class="meta">Confira de qual cliente é cada conta do relatório:</div>
+      ${Object.keys(imp).map((conta,i)=>`<label class="f">${esc(conta)} · ${imp[conta].campanhas.length} campanha${imp[conta].campanhas.length===1?"":"s"}<select id="mp-${i}" data-conta="${esc(conta)}">${opts(sugerirCliente(conta))}</select></label>`).join("")}
+      <button class="debb" type="button" data-impsave="1">Salvar campanhas</button><button type="button" data-impcancel="1">Cancelar</button></div>`:""}
+  </div>`;
+}
+async function salvarImport(){
+  if(!imp||!db)return;
+  const porCliente={}, novoMap={...((S.config.find(x=>x.id==="contas")||{}).map||{})};
+  document.querySelectorAll("[data-conta]").forEach(sel=>{const conta=sel.dataset.conta,cid=sel.value;if(!cid)return;novoMap[conta]=cid;
+    const o=imp[conta],p=porCliente[cid]||(porCliente[cid]={campanhas:[],ini:"",fim:""});
+    p.campanhas.push(...o.campanhas);if(o.ini&&(!p.ini||o.ini<p.ini))p.ini=o.ini;if(o.fim&&(!p.fim||o.fim>p.fim))p.fim=o.fim});
+  const ids=Object.keys(porCliente);if(!ids.length){toast("Escolha o cliente de pelo menos uma conta.");return}
+  try{
+    for(const cid of ids){const p=porCliente[cid];p.campanhas.sort((a,b)=>b.gasto-a.gasto);
+      await db.collection("campanhas").doc(cid).set({clienteId:cid,inicio:p.ini,fim:p.fim,importadoEm:Date.now(),campanhas:p.campanhas.slice(0,80)})}
+    for(const cid of ids){const p=porCliente[cid];const t=totaisDe(p.campanhas);
+      await db.collection("resultados").doc(cid+"_"+(p.fim||hoje())).set({clienteId:cid,inicio:p.ini,fim:p.fim||hoje(),importadoEm:Date.now(),...t})}
+    await db.collection("config").doc("contas").set({map:novoMap});
+    imp=null;render();toast("Campanhas de "+ids.length+" cliente"+(ids.length>1?"s":"")+" atualizadas");
+  }catch(e){setStatus("Não deu pra salvar as campanhas: "+(e&&e.message||"erro"),true)}
+}
+document.addEventListener("input",e=>{if(e.target.id==="lfQ"){leadFiltro.q=e.target.value;render()}});
+async function registrarResultado(id,r){const l=S.leads.find(x=>x.id===id);if(!l||!ST[r])return;
+  const hist=[...(l.historico||[]),{data:hoje(),resultado:r}];
+  const volta=PROX[r]?proxProsp(addDays(hoje(),PROX[r])):"";
+  await salvar("leads",id,{status:r,historico:hist,proximoContato:volta});
+  toast(r==="fechado"?"Fechou! Lead marcado.":"Anotado. Volta em "+dataCurta(volta))}
+document.addEventListener("change",e=>{if(e.target.dataset&&e.target.dataset.resl&&e.target.value){registrarResultado(e.target.dataset.resl,e.target.value);return}});
+document.addEventListener("change",e=>{if(e.target.id==="lfSt"){leadFiltro.status=e.target.value;render()}});
+async function exportLeads(proj){
+  let base=S.leads.filter(x=>x.status!=="separado"&&x.projeto===proj);
+  if(leadFiltro.status)base=base.filter(x=>x.status===leadFiltro.status);
+  if(!base.length){toast("Nenhum lead nesse filtro.");return}
+  const q=s=>'"'+String(s??"").replace(/"/g,'""')+'"';
+  const csv="nome,telefone,cidade,projeto,cnae,situacao,proximo_contato\n"+base.map(x=>[x.nome,x.telefone,x.cidade,x.projeto,x.cnae,(ST[x.status]||{}).t,x.proximoContato].map(q).join(",")).join("\n");
+  const dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null;
+  if(!dl){toast("Download indisponível aqui.");return}
+  try{await dl.save({filename:"leads-"+(proj==="Lumen ERP"?"lumen":"agencia")+"-"+hoje()+".csv",data:"﻿"+csv});toast("Lista salva")}catch(e){if(e&&e.code!=="declined")toast("Não deu pra salvar a lista.")}
+}
+document.addEventListener("change",async e=>{
+  if(e.target.id!=="campFile")return;
+  const files=[...e.target.files];if(!files.length)return;
+  const junto={};
+  for(const f of files){try{let txt;if(/\.xlsx?$/i.test(f.name)){if(typeof window.XLSX==="undefined")throw new Error("leitor de planilhas não carregou");const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});txt=XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]])}else txt=await f.text();const r=lerRelatorio(txt);for(const k in r){if(junto[k]){junto[k].campanhas.push(...r[k].campanhas)}else junto[k]=r[k]}}
+    catch(err){toast("Não consegui ler "+f.name+": "+err.message+". Exporte em CSV.")}}
+  imp=Object.keys(junto).length?junto:null;render();
+});
+function cardSaldo(c){
+  const n=nivel(c), pct=c.valorRecarga&&temSaldo(c)?Math.max(0,Math.min(100,Math.round(100*c.saldoAtual/c.valorRecarga))):0;
+  const cor=n==="zerado"?"var(--bad)":n==="acabando"?"var(--warn)":"var(--ok)";
+  return`<div class="panel">
+    <div class="panel-head"><h3 style="color:var(--fg);font-size:15px;text-transform:none;letter-spacing:0">${esc(c.nome)}</h3>${saldoStatus(c)}</div>
+    <div><div class="num" style="font-size:26px">${temSaldo(c)?brl(c.saldoAtual):"R$ —"}</div>
+      <div class="meta">${temSaldo(c)?`atualizado ${quando(c.saldoAtualizadoEm)}`:"saldo ainda não informado"}${temSaldo(c)&&desatualizado(c)?' <span class="pill warn">atualizar</span>':""}</div></div>
+    ${c.valorRecarga?`<div class="bar" aria-hidden="true"><i style="width:${pct}%;background:${cor}"></i></div>`:""}
+    <div class="meta"><span>Recarga: <b class="num" style="color:var(--fg)">${c.valorRecarga?brl(c.valorRecarga):"a definir pelo Humberto"}</b></span>${limite(c)?`<span>avisa abaixo de ${brl(limite(c))}</span>`:""}</div>
+    ${(c.recargaDias||[]).length?`<div class="meta"><span>Recarga fixa: toda ${(c.recargaDias||[]).map(w=>DSEM[w]).join(", ")}</span><span>próxima <b class="num" style="color:var(--fg)">${dataCurta(proxRecarga(c))}</b></span>${c.ultimaRecarga?`<span>última ${br(c.ultimaRecarga)}</span>`:""}</div>
+      ${recargaDevida(c)?`<button type="button" class="debb" data-recok="${esc(c.id)}" style="align-self:flex-start">Recarga de ${c.valorRecarga?brl(c.valorRecarga):"hoje"} feita</button>`:""}`:""}
+    ${campResumo(c)}
+    <details class="camp"><summary>Valor de recarga e aviso</summary><div class="editcli" style="margin-top:6px">
+      <label class="f">Recarga (R$)<input id="vr-${esc(c.id)}" type="number" step="0.01" min="0" value="${esc(c.valorRecarga||"")}"></label>
+      <label class="f">Avisar abaixo de (R$)<input id="al-${esc(c.id)}" type="number" step="0.01" min="0" value="${esc(c.alertaAbaixo||"")}" placeholder="${c.valorRecarga?Math.round(c.valorRecarga*0.3):"30% da recarga"}"></label>
+      <fieldset class="f" style="grid-column:1/-1;border:0;padding:0;margin:0"><legend style="font-size:12.5px;color:var(--muted);margin-bottom:4px">Dias fixos de recarga (vazio = quando o saldo acabar)</legend>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">${[1,2,3,4,5,6,0].map(w=>`<label style="display:flex;gap:4px;align-items:center;color:var(--fg)"><input type="checkbox" id="rw-${esc(c.id)}-${w}" ${(c.recargaDias||[]).map(Number).includes(w)?"checked":""}>${DSEM[w]}</label>`).join("")}</div></fieldset>
+      <label class="f">Recargas por dia<select id="rd-${esc(c.id)}"><option value="1" ${+c.recargasDia!==3?"selected":""}>1 Pix</option><option value="3" ${+c.recargasDia===3?"selected":""}>3 (manhã, tarde, noite)</option></select></label>
+      <label class="f" style="grid-column:1/-1">Link do saldo no Facebook (página de pagamentos da conta)<input id="lk-${esc(c.id)}" type="url" value="${esc(c.linkSaldo||"")}" placeholder="https://adsmanager.facebook.com/adsmanager/billing_hub/..."></label>
+      <button type="button" class="debb" data-valores="${esc(c.id)}">Salvar</button></div></details>
+    ${pedido(c)?`<div class="note" style="margin:0;border-style:solid;border-color:var(--bad)">O Humberto avisou que está faltando saldo (${quando(pedido(c).em)}). Gere o Pix e cole abaixo. <button type="button" class="ghost" data-pedok="${esc(c.id)}">Marcar como atendido</button></div>`:""}
+    ${c.linkSaldo?`<a class="btnlink" href="${esc(c.linkSaldo)}" target="_blank" rel="noopener">Abrir saldo no Facebook ↗</a>`:'<div class="meta">Sem link do saldo. Cole em "Valor de recarga e aviso".</div>'}
+    <form class="inline-add" data-saldoform="${esc(c.id)}"><input id="sa-${esc(c.id)}" type="number" step="0.01" placeholder="Saldo agora (R$)" aria-label="Saldo agora de ${esc(c.nome)}" required><button type="submit">Atualizar saldo</button></form>
+    ${slots(c).length>1?`<div class="meta"><span class="pill acc">3 recargas por dia</span></div>`:""}
+    ${slots(c).map(s=>{const k=c.id+"|"+s;return pixDe(c,s)?`${pixCard(c,s)}<button type="button" class="ghost" data-clearpix="${esc(k)}" style="align-self:flex-start">Recarga ${SLOT_NOME[s]?"da "+SLOT_NOME[s].toLowerCase()+" ":""}feita, remover Pix</button>`:
+      `<form class="editcli" data-pixform="${esc(k)}" style="margin-top:0"><label class="f" style="grid-column:1/-1">${SLOT_NOME[s]?"Pix da "+SLOT_NOME[s].toLowerCase():"Pix copia e cola gerado no Facebook"}<textarea id="px-${esc(c.id)}-${s}" rows="2" placeholder="Cole aqui o código que começa com 000201… (pode deixar vazio se for só agendar)"></textarea></label>
+        <label class="f">Pra quando<select id="pq-${esc(c.id)}-${s}"><option value="${hoje()}">Hoje</option><option value="${pulaRecarga(addDays(hoje(),1))}">Próximo dia útil · ${dataCurta(pulaRecarga(addDays(hoje(),1)))}</option></select></label>
+        <label class="f">Valor (R$)<input id="pv-${esc(c.id)}-${s}" type="number" step="0.01" min="0" value="${esc(c.valorRecarga||"")}"></label>
+        <button class="debb" type="submit">Salvar${SLOT_NOME[s]?" · "+SLOT_NOME[s].toLowerCase():""}</button></form>`}).join("")}
+    ${agRec(c)&&!slots(c).some(s=>pixDe(c,s))?`<div class="meta"><span class="pill ${agRec(c).data<=hoje()?"warn":"acc"}">recarga agendada pra ${dataCurta(agRec(c).data)}${+agRec(c).valor?" · "+brl(agRec(c).valor):""}</span><button type="button" class="ghost" data-cancagr="${esc(c.id)}">cancelar</button></div>`:""}
+  </div>`;
+}
+function vSaldos(){
+  const cs=clientesOrd();
+  return`<h2>Saldos</h2><p class="lead">Quando um saldo estiver acabando, gere o Pix no Facebook com o valor de recarga do cliente e cole aqui. O Humberto vê o QR na área dele e encaminha pro cliente.</p>
+  ${vImport()}
+  <div class="grid2">${cs.length?cs.map(cardSaldo).join(""):'<div class="empty">Os clientes aparecem aqui assim que forem cadastrados.</div>'}</div>`;
+}
+
+function vendasInfo(){
+  const h=hoje(), mes=h.slice(0,7);
+  const vh=S.vendas.filter(v=>v.data===h), vm=S.vendas.filter(v=>(v.data||"").slice(0,7)===mes);
+  const dias=new Set(S.vendas.map(v=>v.data));let d=dias.has(h)?h:addDays(h,-1),seq=0;while(dias.has(d)){seq++;d=addDays(d,-1)}
+  return{vh,vm,totH:vh.reduce((s,v)=>s+(+v.valor||0),0),totM:vm.reduce((s,v)=>s+(+v.valor||0),0),seq};
+}
+function alertasHumberto(){
+  const h=hoje(), agora=new Date(), hm=pad(agora.getHours())+":"+pad(agora.getMinutes()), V=vendasInfo(), out=[], td=tipoDia(h);
+  if(td==="folga")return[{n:"acc",t:`Hoje é folga. Próximo dia de trabalho: ${dataCurta(proxDiaTrab(h))}.`}];
+  if(td==="feriado")out.push({n:"warn",t:`Feriado: sem disparos e cold calls. Prospecção volta ${dataCurta(proxUtil(h))}.`});
+  if(!V.vh.length)out.push({n:"bad",t:"Nenhuma venda registrada hoje. Bora fechar uma."});
+  const ped=S.clientes.filter(pedido);if(ped.length)out.push({n:"acc",t:`Você pediu saldo: ${ped.map(c=>c.nome).join(", ")} (aguardando a Deborah)`});
+  S.clientes.filter(agRecHoje).forEach(c=>out.push({n:"warn",t:`Recarga agendada hoje: ${c.nome}${+agRecHoje(c).valor?" · "+brl(agRecHoje(c).valor):""} (falta o Pix)`}));
+  S.clientes.filter(recargaDevida).forEach(c=>out.push({n:"warn",t:`Recarga fixa hoje: ${c.nome}${c.valorRecarga?" · "+brl(c.valorRecarga):""}`}));
+  S.clientes.forEach(c=>alertasResultado(c).filter(a=>a.n==="bad").slice(0,2).forEach(a=>out.push({n:"bad",t:`${c.nome}: ${a.t}`})));
+  const ag=agendados().length;if(ag)out.push({n:"acc",t:`${ag} contato${ag>1?"s":""} agendado${ag>1?"s":""} pra ${dataCurta(proxUtil(h))}`});
+  S.reunioes.filter(r=>r.data===h).sort((a,b)=>String(a.hora).localeCompare(String(b.hora))).forEach(r=>{if(!r.hora||r.hora>=hm)out.push({n:"warn",t:`Reunião hoje${r.hora?" às "+r.hora:""}: ${r.titulo}${r.com?" com "+r.com:""}`})});
+  S.reunioes.filter(r=>r.data===addDays(h,1)).forEach(r=>out.push({n:"acc",t:`Amanhã${r.hora?" às "+r.hora:""}: ${r.titulo}${r.com?" com "+r.com:""}`}));
+  const pix=S.clientes.reduce((s,c)=>s+pixesProntos(c).length,0);if(pix)out.push({n:"warn",t:`${pix} Pix pra repassar aos clientes`});
+  const atr=S.tarefas.filter(t=>t.responsavel!=="Deborah"&&t.status!=="feita"&&t.prazo&&t.prazo<h).length;if(atr)out.push({n:"bad",t:`${atr} pendência${atr>1?"s":""} atrasada${atr>1?"s":""}`});
+  const lig=S.leads.filter(devido).length;if(lig)out.push({n:"acc",t:`${lig} contato${lig>1?"s":""} pra ligar hoje`});
+  const acab=S.clientes.filter(precisa).length;if(acab)out.push({n:"warn",t:`${acab} cliente${acab>1?"s":""} com saldo acabando`});
+  return out;
+}
+function leadMini(l){return`<div class="row"><div class="main"><div class="t">${esc(l.nome)}</div><div class="meta"><span class="num" style="user-select:all">${esc(l.telefone||"sem telefone")}</span>${leadPill(l)}${l.canal==="disparo"?'<span class="pill">disparo</span>':""}${l.cnae?`<span>${esc(l.cnae.split("·").slice(-1)[0].trim())}</span>`:""}</div></div></div>`}
+function vHumberto(){
+  const h=hoje(), V=vendasInfo(), al=alertasHumberto();
+  const minhas=ordTarefas(S.tarefas.filter(t=>t.responsavel!=="Deborah"&&(t.status!=="feita"||(t.feitaEm&&new Date(t.feitaEm).toDateString()===new Date().toDateString()))));
+  const reun=S.reunioes.filter(r=>r.data>=h&&r.data<=addDays(h,7)).sort((a,b)=>(a.data+(a.hora||"")).localeCompare(b.data+(b.hora||"")));
+  const pra=S.leads.filter(devido), lum=pra.filter(x=>x.projeto==="Lumen ERP"), ag=pra.filter(x=>x.projeto!=="Lumen ERP");
+  const ps=S.projetos.slice().sort((a,b)=>(a.ordem||99)-(b.ordem||99));
+  const pixs=clientesOrd().flatMap(c=>pixesProntos(c).map(s=>pixCard(c,s)));
+  return`<div class="hello hum"><h2>${saudacao()}, Humberto</h2><p class="lead">Tudo o que a Deborah organizou pra você. Aqui é só olhar e executar: ela mantém o painel em dia.</p></div>
+  <div class="panel" style="margin-bottom:18px;border-color:${al.some(a=>a.n==="bad")?"var(--bad)":"var(--line)"}"><h3>Atenção agora</h3>
+    <div class="list">${al.length?al.map(a=>`<div class="row"><span class="pill ${a.n}" style="flex:none">${a.n==="bad"?"urgente":a.n==="warn"?"hoje":"agenda"}</span><div class="main t">${esc(a.t)}</div></div>`).join(""):'<div class="empty">Tudo em dia.</div>'}</div></div>
+  <div class="stats">
+    <div class="stat ${V.vh.length?"":"bad"}"><b>${V.vh.length}</b><small>vendas hoje · ${brl(V.totH)}</small></div>
+    <div class="stat"><b class="num" style="font-size:19px">${brl(V.totM)}</b><small>vendido no mês (${V.vm.length})</small></div>
+    <div class="stat"><b>${V.seq}</b><small>dias seguidos com venda</small></div>
+    <div class="stat"><b>${lum.length}</b><small>Lumen pra ligar (meta 15)</small></div>
+    <div class="stat"><b>${ag.length}</b><small>Captação pra ligar (meta 10)</small></div>
+  </div>
+  ${(()=>{const us=S.clientes.map(c=>{const h=histDe(c.id);return{c,u:h[h.length-1]}}).filter(x=>x.u);if(!us.length)return"";
+    const g=us.reduce((s,x)=>s+x.u.gasto,0),r=us.reduce((s,x)=>s+x.u.resultados,0);
+    return`<div class="panel" style="margin-bottom:18px"><div class="panel-head"><h3>Campanhas do Facebook</h3><a href="#hresultados" class="pill acc">ver campanhas</a></div>
+      <div class="meta"><span>Investido <b class="num" style="color:var(--fg)">${brl(g)}</b></span><span>Resultados <b class="num" style="color:var(--fg)">${r.toLocaleString("pt-BR")}</b></span><span>Custo médio <b class="num" style="color:var(--fg)">${r?brl(g/r):"-"}</b></span></div>
+      <div class="list">${us.map(x=>`<div class="row"><div class="main"><div class="t">${esc(x.c.nome)}</div><div class="meta"><span class="num">${brl(x.u.gasto)}</span><span>${x.u.resultados.toLocaleString("pt-BR")} result.</span><span class="num">${cpr(x.u)?brl(cpr(x.u))+" cada":""}</span></div></div>${alertasResultado(x.c).filter(a=>a.n!=="ok").slice(0,1).map(a=>`<span class="pill ${a.n}">${esc(a.t.split(":")[0])}</span>`).join("")}</div>`).join("")}</div></div>`})()}
+  <div class="panel" style="margin-bottom:18px"><div class="panel-head"><h3>Falta saldo? Avise a Deborah</h3><span class="meta">toque no cliente</span></div>
+    <div class="chips">${S.clientes.slice().sort((a,b)=>a.nome.localeCompare(b.nome)).map(c=>{const p=pedido(c);return`<button type="button" class="chip ${p?"on":""}" data-pede="${esc(c.id)}" aria-pressed="${!!p}">${esc(c.nome)}${p?`<small>pedido ${quando(p.em).split(" ")[1]}</small>`:""}</button>`}).join("")}</div>
+    <div class="meta">O cliente marcado aparece em vermelho pra Deborah e entra nos alertas dela. Some sozinho quando ela colar o Pix.</div></div>
+  <div class="panel" style="margin-bottom:18px"><div class="panel-head"><h3>Pix pra repassar</h3><span class="meta">copie e mande pro cliente</span></div>
+    ${pixs.length?`<div class="pixgrid">${pixs.join("")}</div>`:'<div class="empty">Nenhum Pix esperando agora.</div>'}</div>
+  <div class="grid2">
+    <div class="panel"><div class="panel-head"><h3>Suas pendências</h3><span class="meta">marque quando concluir</span></div><div class="list">${minhas.length?minhas.map(vTarefaRow).join(""):'<div class="empty">Nada pendente com você.</div>'}</div></div>
+    <div class="panel"><h3>Reuniões</h3><div class="list">${reun.length?reun.map(vReuniaoRow).join(""):'<div class="empty">Nenhuma reunião nos próximos 7 dias.</div>'}</div></div>
+    <div class="panel"><div class="panel-head"><h3>Contatos Lumen ERP</h3><a href="#hleads" class="pill acc">ver todos</a></div><div class="list" style="gap:8px">${lum.length?lum.slice(0,4).map(leadCard).join(""):'<div class="empty">A Deborah ainda não liberou contatos.</div>'}</div></div>
+    <div class="panel"><div class="panel-head"><h3>Contatos da captação</h3><a href="#hleads" class="pill acc">ver todos</a></div><div class="list" style="gap:8px">${ag.length?ag.slice(0,4).map(leadCard).join(""):'<div class="empty">A Deborah ainda não liberou contatos.</div>'}</div></div>
+    <div class="panel"><div class="panel-head"><h3>Andamento dos projetos</h3><a href="#hprojetos" class="pill acc">detalhes</a></div>
+      ${ps.map(p=>{const pr=progresso(p);const nx=(p.etapas||[]).find(e=>!e.feita);return`<div><div class="panel-head"><span class="t">${esc(p.nome)}</span><span class="num">${pr}%</span></div><div class="bar"><i style="width:${pr}%"></i></div><div class="meta">${nx?"próximo: "+esc(nx.nome):"tudo concluído"}</div></div>`}).join("")||'<div class="empty">Nenhum projeto.</div>'}</div>
+    <div class="panel"><div class="panel-head"><h3>Vendas de hoje</h3></div><div class="list">${V.vh.length?V.vh.map(v=>`<div class="row"><div class="main"><div class="t">${esc(v.cliente||v.descricao)}</div><div class="meta"><span>${esc(v.projeto)}</span>${v.descricao&&v.cliente?`<span>${esc(v.descricao)}</span>`:""}</div></div><span class="num">${brl(v.valor)}</span></div>`).join(""):'<div class="empty" style="color:var(--bad)">Ainda sem venda hoje.</div>'}</div></div>
+  </div>`;
+}
+function fone55(t){let d=telLimpo(t);if(!d)return"";if(d.length>=12&&d.startsWith("55"))return"+"+d;if(d.length===10||d.length===11)return"+55"+d;if(d.length===8||d.length===9)return"+5579"+d;return"+"+d}
+function txtLeads(ls){return[...new Set(ls.filter(l=>telLimpo(l.telefone)).map(l=>fone55(l.telefone)))].join("\n")}
+const leadsHoje=k=>S.leads.filter(devido).filter(x=>(x.projeto==="Lumen ERP")===(k==="lumen"));
+function leadCard(l){
+  const ult=(l.historico||[]).slice(-1)[0], hj=ult&&ult.data===hoje();
+  return`<div class="lead ${hj?"feito":""}">
+    <div class="panel-head" style="align-items:flex-start"><div style="min-width:0"><div class="nm">${esc(l.nome)}</div>
+      <div class="meta">${l.canal==="disparo"?'<span class="pill">disparo</span>':'<span class="pill acc">cold call</span>'}${l.cnae?`<span>${esc(l.cnae.split("·").slice(-1)[0].trim())}</span>`:""}${l.bairro||l.cidade?`<span>${esc(l.bairro||l.cidade)}</span>`:""}</div></div>${leadPill(l)}</div>
+    <div class="tel num">${esc(l.telefone||"sem telefone")}</div>
+    ${ult?`<div class="meta">último contato: ${esc(ST[ult.resultado]?ST[ult.resultado].t:ult.resultado)} em ${br(ult.data)}</div>`:""}
+    ${hj?`<div class="meta">Registrado hoje. ${l.proximoContato?`Volta em ${dataCurta(l.proximoContato)}.`:""} <button type="button" class="ghost" data-undo="${esc(l.id)}">Desfazer</button></div>`:
+    `<div class="resbtns">${[["sem_resposta","Não atendeu"],["interessado","Interessado"],["reuniao","Marcou reunião"],["fechado","Fechou"],["sem_interesse","Sem interesse"]].map(([r,t])=>`<button type="button" class="${r==="fechado"?"pri":""}" data-res="${esc(l.id)}|${r}">${t}</button>`).join("")}</div>`}
+  </div>`;
+}
+function vHLeads(){
+  const h=hoje();
+  const pra=S.leads.filter(devido).sort((a,b)=>(a.status==="liberado")-(b.status==="liberado")||String(a.proximoContato||"").localeCompare(String(b.proximoContato||"")));
+  const feitos=S.leads.filter(l=>((l.historico||[]).slice(-1)[0]||{}).data===h);
+  const hojeFeitos=S.leads.reduce((s,l)=>s+(l.historico||[]).filter(x=>x.data===h).length,0);
+  const lumF=feitos.filter(x=>x.projeto==="Lumen ERP").length, agF=feitos.length-lumF;
+  const grupo=leadsAba==="lumen"?"Lumen ERP":"Agência";
+  const lista=pra.filter(x=>(x.projeto==="Lumen ERP")===(leadsAba==="lumen")), feitosG=feitos.filter(x=>(x.projeto==="Lumen ERP")===(leadsAba==="lumen"));
+  const meta=leadsAba==="lumen"?15:10, feitosN=leadsAba==="lumen"?lumF:agF;
+  return`<h2>Contatos</h2><p class="lead">Ligue e toque no resultado. Quem não fechar volta sozinho na data certa, e a Deborah vê tudo na hora.</p>
+  ${bannerDia()}${agendados().length?`<div class="note">${agendados().length} contato${agendados().length>1?"s":""} agendado${agendados().length>1?"s":""} pra ${dataCurta(proxProsp(addDays(h,1)))}.</div>`:""}
+  <div class="seg" role="group" aria-label="Projeto" style="margin-bottom:14px"><button data-laba="agencia" aria-pressed="${leadsAba==="agencia"}">Captação · ${pra.filter(x=>x.projeto!=="Lumen ERP").length}</button><button data-laba="lumen" aria-pressed="${leadsAba==="lumen"}">Lumen ERP · ${pra.filter(x=>x.projeto==="Lumen ERP").length}</button></div>
+  <div class="stats">
+    <div class="stat"><b>${feitosN} <span style="font-size:14px;color:var(--muted)">de ${meta}</span></b><small>feitos hoje · ${grupo}</small><div class="bar" style="margin-top:6px"><i style="width:${Math.min(100,Math.round(100*feitosN/meta))}%"></i></div></div>
+    <div class="stat"><b>${lista.length}</b><small>pra ligar agora</small></div>
+    <div class="stat"><b>${S.leads.filter(x=>x.projeto===grupo&&(x.status==="interessado"||x.status==="reuniao")).length}</b><small>interessados ou com reunião</small></div>
+    <div class="stat"><b>${S.leads.filter(x=>x.projeto===grupo&&x.status==="fechado").length}</b><small>fechados</small></div>
+  </div>
+  <div class="panel" style="margin-bottom:14px"><div class="panel-head"><h3>Lista em texto</h3><div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" data-txtcopy="${leadsAba}">Copiar</button><button type="button" class="pri" data-txt="${leadsAba}">Baixar .txt</button></div></div>
+    <div class="meta">Só os números no formato +55, um por linha, dos ${lista.length} contato${lista.length===1?"":"s"} de ${grupo} pra hoje.</div>
+    ${lista.length?`<pre class="txtprev">${esc(txtLeads(lista).split("\n").slice(0,3).join("\n"))}${lista.length>3?"\n…":""}</pre>`:""}</div>
+  <div class="leadgrid">${lista.length?lista.map(leadCard).join(""):`<div class="empty">Nada pra ligar agora em ${grupo}.</div>`}</div>
+  ${feitosG.length?`<h3 style="margin:22px 0 10px">Feitos hoje (${feitosG.length})</h3><div class="leadgrid">${feitosG.map(leadCard).join("")}</div>`:""}`;
+}
+function vHProjetos(){
+  const ps=S.projetos.slice().sort((a,b)=>(a.ordem||99)-(b.ordem||99));
+  return`<h2>Projetos</h2><p class="lead">Andamento de cada projeto. Marque a etapa quando concluir.</p>
+  <div class="proj">${ps.length?ps.map(p=>{const pr=progresso(p),et=p.etapas||[],nx=et.findIndex(e=>!e.feita),pend=S.tarefas.filter(t=>t.projeto===p.nome&&t.status!=="feita").length;
+    return`<div class="panel">
+      <div class="panel-head" style="align-items:flex-end"><div style="min-width:0"><div class="nm" style="font-size:20px">${esc(p.nome)}</div>${p.status?`<span class="pill acc">${esc(p.status)}</span>`:""}</div>
+        <div style="text-align:right"><div class="num" style="font-size:32px;line-height:1">${pr}%</div><div class="meta">${et.filter(e=>e.feita).length} de ${et.length} etapas</div></div></div>
+      <div class="bar" style="height:14px" role="progressbar" aria-valuenow="${pr}" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso de ${esc(p.nome)}"><i style="width:${pr}%"></i></div>
+      ${nx>=0?`<div class="note" style="margin:0;border-style:solid;border-color:var(--accent)"><b>Próximo passo:</b> ${esc(et[nx].nome)}</div>`:'<div class="note" style="margin:0">Todas as etapas concluídas.</div>'}
+      <div class="etapas">${et.map((e,i)=>`<label class="etapa ${e.feita?"ok":i===nx?"atual":""}"><input type="checkbox" data-etapa="${esc(p.id)}|${i}" ${e.feita?"checked":""}><span>${esc(e.nome)}</span></label>`).join("")}</div>
+      ${pend?`<div class="meta">${pend} pendência${pend>1?"s":""} ligada${pend>1?"s":""} a este projeto</div>`:""}
+      ${p.descricao||(p.arquitetura||[]).length?`<details class="camp"><summary>Descrição e arquitetura</summary>${p.descricao?`<p class="desc" style="margin:8px 0">${esc(p.descricao)}</p>`:""}${(p.arquitetura||[]).length?`<div class="arch">${p.arquitetura.map(a=>`<div><b>${esc(a.camada)}</b><ul>${(a.itens||[]).map(i=>`<li>${esc(i)}</li>`).join("")}</ul></div>`).join("")}</div>`:""}</details>`:""}
+    </div>`}).join(""):'<div class="empty">Nenhum projeto cadastrado.</div>'}</div>`;
+}
+/* ---------- prospecção e leads ---------- */
+const ST={separado:{t:"Separado",c:""},liberado:{t:"Pra ligar",c:"acc"},sem_resposta:{t:"Sem resposta",c:"warn"},interessado:{t:"Interessado",c:"ok"},
+  reuniao:{t:"Reunião marcada",c:"ok"},fechado:{t:"Fechou",c:"ok"},sem_interesse:{t:"Sem interesse",c:""}};
+const PROX={sem_resposta:2,interessado:3,reuniao:7,sem_interesse:60};
+const vivo=l=>l.status!=="fechado";
+const devido=l=>ehProsp(hoje())&&vivo(l)&&l.status!=="separado"&&((l.status==="liberado"&&(l.paraDia||"")<=hoje())||(l.status!=="liberado"&&l.proximoContato&&l.proximoContato<=hoje()));
+const agendados=()=>S.leads.filter(l=>l.status==="liberado"&&(l.paraDia||"")>hoje());
+const telLimpo=t=>String(t||"").replace(/\D/g,"");
+function leadPill(l){const s=ST[l.status]||ST.separado;return`<span class="pill ${s.c}">${s.t}</span>`}
+function leadRowH(l){
+  const ult=(l.historico||[]).slice(-1)[0];
+  return`<div class="row"><div class="main"><div class="t">${esc(l.nome)}</div>
+    <div class="meta"><span class="num" style="user-select:all">${esc(l.telefone||"sem telefone")}</span><span class="pill ${l.projeto==="Lumen ERP"?"acc":"deb"}">${esc(l.projeto)}</span>${leadPill(l)}${l.canal==="disparo"?'<span class="pill">disparo</span>':""}${l.cnae?`<span>${esc(l.cnae.split("·")[0].trim())}</span>`:""}${l.cidade?`<span>${esc(l.cidade)}</span>`:""}</div>
+    ${ult?`<div class="meta">último: ${esc(ST[ult.resultado]?ST[ult.resultado].t:ult.resultado)} em ${br(ult.data)}${ult.nota?" · "+esc(ult.nota):""}</div>`:""}</div></div>`;
+}
+/* importação da planilha de pesquisa */
+let pendImp=null;
+function titulo(s){const small=new Set(["de","da","do","das","dos","e"]);return String(s||"").toLowerCase().split(/\s+/).filter(Boolean).map(w=>small.has(w)?w:w[0].toUpperCase()+w.slice(1)).join(" ")}
+function foneFmt(t){const d=telLimpo(t);if(d.length===11)return`(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;if(d.length===10)return`(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;return String(t||"").trim()}
+function cnaeRotulo(k,cod,desc){cod=String(cod||"").replace(/\D/g,"");if(!cod)return"";
+  const achado=rodizio(k).find(x=>x.split("·")[0].replace(/\D/g,"")===cod);if(achado)return achado;
+  return cod.length===7?`${cod.slice(0,4)}-${cod[4]}/${cod.slice(5)} · ${desc||""}`.trim():`${cod} · ${desc||""}`}
+function lerPesquisa(k,linhas){
+  const P=PROSP[k], ign={"já na base":0,"sem telefone":0,"não é MEI":0,"inativa":0}, rows=[];
+  const jaTel=new Set(S.leads.filter(x=>x.projeto===P.proj).map(x=>telLimpo(x.telefone)).filter(Boolean));
+  const jaCnpj=new Set(S.leads.filter(x=>x.projeto===P.proj&&x.cnpj).map(x=>x.cnpj));
+  linhas.forEach(r0=>{const r={};for(const key in r0)r[norm(key).replace(/\s+/g,"_")]=r0[key];
+    const sit=norm(r.situacao_cadastral);if(sit&&sit!=="ativa"){ign["inativa"]++;return}
+    const mei=r.mei_optante;const ehMei=mei===true||norm(mei)==="true"||norm(mei)==="sim";
+    if(k==="lumen"&&mei!==undefined&&!ehMei){ign["não é MEI"]++;return}
+    const tel=foneFmt(r.telefone||String(r.telefones||"").split(/[;,]/)[0]);if(!telLimpo(tel)){ign["sem telefone"]++;return}
+    const cnpj=String(r.cnpj||"").replace(/\D/g,"").padStart(14,"0");
+    if(jaTel.has(telLimpo(tel))||(r.cnpj&&jaCnpj.has(cnpj))){ign["já na base"]++;return}
+    jaTel.add(telLimpo(tel));if(r.cnpj)jaCnpj.add(cnpj);
+    const fant=String(r.nome_fantasia||"").trim(), raz=String(r.razao_social||r.nome||"").replace(/^[\d.\s]+/,"").trim();
+    rows.push({nome:titulo(fant||raz)||"Sem nome",telefone:tel,cidade:titulo(r.municipio||r.cidade),bairro:titulo(r.bairro),cnpj:r.cnpj?cnpj:"",email:String(r.email||"").toLowerCase().trim(),
+      cnae:cnaeRotulo(k,r.atividade_principal_codigo,r.atividade_principal_descricao)||v_cnaeAtual(k),porte:ehMei?"MEI":String(r.porte_empresa||"")});
+  });
+  return{k,rows,ign};
+}
+const v_cnaeAtual=k=>{const el=document.getElementById("lc-"+k);return el?el.value.trim():""};
+document.addEventListener("change",async e=>{
+  const id=e.target.id||"";if(!id.startsWith("xf-"))return;const k=id.slice(3);const f=e.target.files[0];if(!f)return;
+  if(typeof window.XLSX==="undefined"){toast("O leitor de planilhas não carregou. Recarregue a página.");return}
+  try{const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});const sh=wb.Sheets[wb.SheetNames[0]];
+    const linhas=XLSX.utils.sheet_to_json(sh,{defval:"",raw:true});
+    if(!linhas.length){toast("A planilha está vazia.");return}
+    pendImp=lerPesquisa(k,linhas);render();
+  }catch(err){toast("Não consegui ler "+f.name+". Confira se é a planilha da pesquisa.")}
+});
+async function adicionarImport(k){
+  if(!pendImp||pendImp.k!==k||!db)return;const P=PROSP[k];
+  const lib=(document.getElementById("ll-"+k)||{checked:true}).checked;
+  const canal=P.canais?((document.getElementById("xk-"+k)||{}).value||"ligacao"):"ligacao";
+  const paraDia=proxProsp((document.getElementById("pd-"+k)||{}).value||hoje());
+  const agora=Date.now(), rows=pendImp.rows;pendImp=null;render();let n=0;
+  for(const r of rows){const id=(k==="lumen"?"lumen-":"ag-")+(r.cnpj||telLimpo(r.telefone));
+    try{await db.collection("leads").doc(id).set({...r,projeto:P.proj,canal,paraDia,status:lib?"liberado":"separado",historico:[],proximoContato:"",criadoEm:agora,liberadoEm:lib?agora:null,origem:"planilha "+br(hoje())});n++}
+    catch(e){setStatus("Parte dos contatos não entrou. Tente importar de novo.",true);break}}
+  toast(n+" contato"+(n===1?"":"s")+(lib?" liberado"+(n===1?"":"s")+" pro Humberto pra "+dataCurta(paraDia):" separado"+(n===1?"":"s")));
+}
+const PROSP={
+  lumen:{proj:"Lumen ERP",cfg:"lumen-cnaes",titulo:"Lumen ERP",lead:"Prospecção do Lumen ERP: só MEIs que vendem produtos. Cada dia tem um CNAE de comércio sugerido; você puxa os MEIs desse CNAE e libera pro Humberto ligar.",meta:"Puxe pelo menos 15 MEIs desse CNAE pras cold calls do Humberto.",canais:false},
+  agencia:{proj:"Agência",cfg:"agencia-cnaes",titulo:"Captação da agência",lead:"Captação de clientes pra venda dos serviços da agência (tráfego pago). Cada dia tem um nicho de comércio sugerido; separe 50 contatos pra disparo e 10 pra cold call.",meta:"Separe 50 contatos pra disparo e 10 pra cold call desse nicho.",canais:true}
+};
+const rodizio=k=>((S.config.find(x=>x.id===PROSP[k].cfg)||{}).lista)||[];
+const diaN=d=>Math.round((Date.parse(d+"T12:00:00")-Date.parse("2026-01-01T12:00:00"))/864e5);
+const cnaeDe=(k,d)=>{const l=rodizio(k);return l.length?l[((diaN(d)%l.length)+l.length)%l.length]:""};
+function vProspeccao(k){
+  const P=PROSP[k], h=hoje(), am=proxUtil(h), l=rodizio(k);
+  const meus=S.leads.filter(x=>x.projeto===P.proj);
+  const sep=meus.filter(x=>x.status==="separado");
+  const prox=[];let d=h;for(let i=0;i<10;i++){d=proxUtil(d);prox.push(d)}
+  const porCnae={};meus.forEach(x=>{if(x.cnae)porCnae[x.cnae]=(porCnae[x.cnae]||0)+1});
+  let base=meus.filter(x=>x.status!=="separado");
+  if(leadFiltro.status)base=base.filter(x=>x.status===leadFiltro.status);
+  if(leadFiltro.q){const q=norm(leadFiltro.q);base=base.filter(x=>norm(x.nome+" "+x.telefone+" "+x.cnae+" "+x.cidade).includes(q))}
+  base.sort((a,b)=>String(a.proximoContato||"9").localeCompare(String(b.proximoContato||"9")));
+  const vencidos=meus.filter(x=>vivo(x)&&!["separado","liberado"].includes(x.status)&&x.proximoContato&&x.proximoContato<h).length;
+  return`<h2>${P.titulo}</h2><p class="lead">${P.lead} Quem não fechar volta com data de novo contato: nenhum lead some.</p>
+  ${bannerDia()}
+  <div class="stats">
+    <div class="stat"><b>${sep.length}</b><small>separados, falta liberar</small></div>
+    <div class="stat"><b>${meus.filter(x=>x.status==="liberado"&&(x.paraDia||"")<=h).length}</b><small>com o Humberto hoje</small></div>
+    <div class="stat"><b>${meus.filter(x=>x.status==="liberado"&&(x.paraDia||"")>h).length}</b><small>agendados pra ${dataCurta(proxProsp(addDays(h,1)))}</small></div>
+    <div class="stat ${vencidos?"bad":""}"><b>${vencidos}</b><small>retornos atrasados</small></div>
+    <div class="stat"><b>${meus.filter(x=>vivo(x)&&x.status!=="separado").length}</b><small>leads vivos</small></div>
+  </div>
+  <div class="grid2" style="margin-bottom:18px">
+    <div class="panel"><div class="panel-head"><h3>Sugestão de CNAE</h3><span class="pill acc">${dia(am)} ${br(am)}</span></div>
+      <div class="t" style="font-size:17px">${esc(cnaeDe(k,am)||"Cadastre as sugestões abaixo")}</div>
+      <div class="meta">${P.meta} É só uma sugestão: se preferir outro nicho, use outro.</div>
+      <h3>Próximos dias</h3><div class="list">${prox.map(x=>`<div class="row"><div class="main"><div class="meta"><span class="num">${dia(x)} ${br(x)}</span></div><div class="t" style="font-size:13.5px">${esc(cnaeDe(k,x))}</div></div>${porCnae[cnaeDe(k,x)]?`<span class="pill">${porCnae[cnaeDe(k,x)]} leads</span>`:""}</div>`).join("")}</div>
+      <details class="camp"><summary>Editar as sugestões de CNAE (${l.length})</summary>
+        <form class="editcli" data-rodform="${k}"><label class="f" style="grid-column:1/-1">Um CNAE por linha<textarea id="rod-${k}" rows="10">${esc(l.join("\n"))}</textarea></label><button class="debb" type="submit">Salvar sugestões</button></form></details>
+    </div>
+    <div class="panel"><h3>Adicionar contatos puxados</h3>
+      <div class="editcli" style="margin-top:0">
+        <label class="f" style="grid-column:1/-1">Arquivo da pesquisa (.xlsx ou .csv)<input id="xf-${k}" type="file" accept=".xlsx,.xls,.csv"></label>
+        <label class="f">Pra qual dia<input id="pd-${k}" type="date" value="${proxProsp(h)}"></label>
+        ${P.canais?`<label class="f">Esses contatos são pra<select id="xk-${k}"><option value="ligacao">Cold call</option><option value="disparo">Disparo</option></select></label>`:""}
+        ${pendImp&&pendImp.k===k?`<div style="grid-column:1/-1" class="meta">${pendImp.rows.length} contato${pendImp.rows.length===1?"":"s"} pronto${pendImp.rows.length===1?"":"s"} pra entrar${Object.entries(pendImp.ign).filter(([a,n])=>n).map(([a,n])=>` · ${n} ignorado${n>1?"s":""} (${a})`).join("")}</div>
+          ${pendImp.rows.length?`<div style="grid-column:1/-1" class="list">${pendImp.rows.slice(0,6).map(r=>`<div class="row"><div class="main"><div class="t">${esc(r.nome)}</div><div class="meta"><span class="num">${esc(r.telefone)}</span><span>${esc(r.bairro||r.cidade)}</span><span>${esc(r.cnae.split("·").slice(-1)[0].trim())}</span></div></div></div>`).join("")}${pendImp.rows.length>6?`<div class="meta">e mais ${pendImp.rows.length-6}</div>`:""}</div>
+          <button class="debb" type="button" data-xadd="${k}">Adicionar ${pendImp.rows.length} contato${pendImp.rows.length===1?"":"s"}</button>`:""}<button type="button" data-xcancel="1">Cancelar</button>`:""}
+      </div>
+      <details class="camp"><summary>Ou colar contatos à mão</summary>
+      <form class="add" data-leadform="${k}">
+        <label class="f">CNAE<input id="lc-${k}" list="cl-${k}" value="${esc(cnaeDe(k,am))}"></label>
+        ${P.canais?`<label class="f">Pra quê<select id="lk-${k}"><option value="ligacao">Cold call</option><option value="disparo">Disparo</option></select></label>`:`<div class="meta" style="align-self:center"><span class="pill acc">Só MEI</span></div>`}
+        <label class="f wide">Contatos, um por linha: Nome ; Telefone ; Cidade<textarea id="lt-${k}" rows="6" required placeholder="${k==="lumen"?"Maria Joias MEI ; (79) 99999-0000 ; Aracaju":"Ótica Visão ; (79) 99999-0000 ; Aracaju"}"></textarea></label>
+        <label class="f" style="flex-direction:row;align-items:center;gap:8px"><input id="ll-${k}" type="checkbox" checked>Já liberar pro Humberto</label>
+        <button class="debb" type="submit">Adicionar</button>
+      </form></details>
+      <datalist id="cl-${k}">${l.map(x=>`<option value="${esc(x)}">`).join("")}</datalist>
+      ${sep.length?`<div class="panel-head"><h3>${sep.length} separado${sep.length>1?"s":""}</h3><button class="debb" type="button" data-liberar="${esc(P.proj)}">Liberar todos pro Humberto</button></div>
+        <div class="list">${sep.slice(0,20).map(x=>`<div class="row"><div class="main"><div class="t">${esc(x.nome)}</div><div class="meta"><span class="num">${esc(x.telefone)}</span>${x.canal?`<span>${x.canal==="disparo"?"disparo":"cold call"}</span>`:""}</div></div>${delBtn("leads",x.id)}</div>`).join("")}</div>`:""}
+    </div>
+  </div>
+  <div class="panel"><div class="panel-head"><h3>Base de leads e remarketing</h3><button type="button" data-export="${esc(P.proj)}">Baixar lista (CSV)</button></div>
+    <div class="inline-add">
+      <input id="lfQ" placeholder="Buscar nome, telefone, CNAE" aria-label="Buscar" value="${esc(leadFiltro.q)}">
+      <select id="lfSt" aria-label="Situação"><option value="">Todas as situações</option>${Object.keys(ST).filter(s=>s!=="separado").map(s=>`<option value="${s}" ${leadFiltro.status===s?"selected":""}>${ST[s].t}</option>`).join("")}</select>
+    </div>
+    <div class="tablewrap"><table><thead><tr><th>Lead</th><th>Situação</th><th>Próximo contato</th><th>Registrar resultado</th><th></th></tr></thead><tbody>
+    ${base.length?base.slice(0,200).map(x=>`<tr><td><div class="t">${esc(x.nome)}</div><div class="meta"><span class="num">${esc(x.telefone)}</span>${x.cnae?`<span>${esc(x.cnae.split("·")[0].trim())}</span>`:""}${x.canal==="disparo"?"<span>disparo</span>":""}</div></td>
+      <td>${leadPill(x)}</td><td class="num">${x.proximoContato?prazoPill(x.proximoContato,false)||br(x.proximoContato):"-"}</td>
+      <td><select data-resl="${esc(x.id)}" aria-label="Resultado do contato com ${esc(x.nome)}"><option value="">${(x.historico||[]).length} contato${(x.historico||[]).length===1?"":"s"}: registrar…</option>${["sem_resposta","interessado","reuniao","fechado","sem_interesse"].map(r=>`<option value="${r}">${ST[r].t}</option>`).join("")}</select></td><td class="r">${delBtn("leads",x.id)}</td></tr>`).join(""):`<tr><td colspan="5" class="empty">Nenhum lead ainda. Os contatos que você adicionar e liberar aparecem aqui com a situação de cada um.</td></tr>`}
+    </tbody></table></div>
+    <div class="meta">A lista baixada (nome e telefone) serve pra montar público de remarketing no Facebook.</div>
+  </div>`;
+}
+/* ---------- resultados do Facebook (histórico dos relatórios) ---------- */
+const histDe=cid=>S.resultados.filter(r=>r.clienteId===cid).sort((a,b)=>String(a.fim||"").localeCompare(String(b.fim||""))||(a.importadoEm||0)-(b.importadoEm||0));
+const cpr=r=>r&&r.resultados?r.gasto/r.resultados:0;
+function totaisDe(ks){const g=ks.reduce((s,k)=>s+(+k.gasto||0),0),r=ks.reduce((s,k)=>s+(+k.resultados||0),0);
+  return{gasto:Math.round(g*100)/100,resultados:r,impressoes:ks.reduce((s,k)=>s+(+k.impressoes||0),0),campanhas:ks.length,ativas:ks.filter(ativa).length,semResultado:ks.filter(k=>k.gasto>0&&!k.resultados).map(k=>k.nome).slice(0,10)}}
+function alertasResultado(c){
+  const hs=histDe(c.id),u=hs[hs.length-1],a=hs[hs.length-2],out=[];if(!u)return out;
+  if(u.importadoEm&&Date.now()-u.importadoEm>3*864e5)out.push({n:"warn",t:"relatório com mais de 3 dias"});
+  (u.semResultado||[]).forEach(nome=>out.push({n:"bad",t:`gastando sem resultado: ${nome}`}));
+  if(a&&cpr(a)&&cpr(u)>cpr(a)*1.3)out.push({n:"bad",t:`custo por resultado subiu ${Math.round(100*(cpr(u)/cpr(a)-1))}%`});
+  if(a&&cpr(a)&&cpr(u)&&cpr(u)<cpr(a)*0.85)out.push({n:"ok",t:`custo por resultado caiu ${Math.round(100*(1-cpr(u)/cpr(a)))}%`});
+  if(!u.ativas)out.push({n:"warn",t:"nenhuma campanha ativa"});
+  return out;
+}
+function spark(hs){
+  const pts=hs.slice(-8).map(cpr);if(pts.length<2)return"";
+  const mx=Math.max(...pts)||1,w=88,h=26,st=w/(pts.length-1);
+  const xy=pts.map((v,i)=>[i*st,h-2-(v/mx)*(h-6)]);
+  return`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true" style="display:block;overflow:visible"><polyline fill="none" stroke="var(--accent)" stroke-width="1.6" points="${xy.map(p=>p.join(",")).join(" ")}"/><circle cx="${xy[xy.length-1][0]}" cy="${xy[xy.length-1][1]}" r="2.6" fill="var(--accent)"/></svg>`;
+}
+function vResultados(){
+  const cs=clientesOrd().slice().sort((a,b)=>a.nome.localeCompare(b.nome));
+  const ult=cs.map(c=>({c,hs:histDe(c.id)})).map(x=>({...x,u:x.hs[x.hs.length-1],a:x.hs[x.hs.length-2],al:alertasResultado(x.c)}));
+  const com=ult.filter(x=>x.u), g=com.reduce((s,x)=>s+x.u.gasto,0), r=com.reduce((s,x)=>s+x.u.resultados,0);
+  const comAlerta=ult.filter(x=>x.al.some(a=>a.n==="bad"));
+  return`<h2>Resultados do Facebook</h2><p class="lead">Investimento, resultados e custo por resultado de cada cliente, comparando com o relatório anterior. ${mode==="deborah"?"Importe o relatório do Gerenciador sempre que chegar.":"A Deborah importa o relatório do Gerenciador; aqui você só acompanha."}</p>
+  <div class="stats">
+    <div class="stat"><b class="num" style="font-size:19px">${brl(g)}</b><small>investido (último relatório)</small></div>
+    <div class="stat"><b>${r.toLocaleString("pt-BR")}</b><small>resultados</small></div>
+    <div class="stat"><b class="num" style="font-size:19px">${r?brl(g/r):"-"}</b><small>custo médio por resultado</small></div>
+    <div class="stat ${comAlerta.length?"bad":""}"><b>${comAlerta.length}</b><small>clientes pedindo atenção</small></div>
+  </div>
+  ${mode==="deborah"?vImport():""}
+  ${comAlerta.length?`<div class="panel" style="margin-bottom:18px;border-color:var(--bad)"><h3>Pedindo atenção</h3><div class="list">${comAlerta.map(x=>`<div class="row"><div class="main"><div class="t">${esc(x.c.nome)}</div><div class="meta">${x.al.filter(a=>a.n!=="ok").map(a=>`<span class="pill ${a.n}">${esc(a.t)}</span>`).join("")}</div></div></div>`).join("")}</div></div>`:""}
+  <div class="panel"><h3>Por cliente</h3>
+    <div class="tablewrap"><table><thead><tr><th>Cliente</th><th>Período</th><th class="r">Investido</th><th class="r">Resultados</th><th class="r">Custo/result.</th><th class="r">vs anterior</th><th>Tendência</th></tr></thead><tbody>
+    ${ult.map(x=>{if(!x.u)return`<tr><td>${esc(x.c.nome)}</td><td colspan="6" class="meta">sem relatório importado</td></tr>`;
+      const d=x.a&&cpr(x.a)&&cpr(x.u)?cpr(x.u)/cpr(x.a)-1:null;
+      return`<tr><td><div class="t">${esc(x.c.nome)}</div><div class="meta">${x.u.ativas} ativa${x.u.ativas===1?"":"s"} de ${x.u.campanhas}${x.al.length?" · "+x.al.map(a=>`<span class="pill ${a.n}">${esc(a.t.split(":")[0])}</span>`).join(" "):""}</div></td>
+        <td class="num">${dataBr(x.u.inicio)}${x.u.fim?" a "+dataBr(x.u.fim):""}</td><td class="r num">${brl(x.u.gasto)}</td><td class="r num">${x.u.resultados.toLocaleString("pt-BR")}</td>
+        <td class="r num">${cpr(x.u)?brl(cpr(x.u)):"-"}</td>
+        <td class="r num">${d===null?"-":`<span class="pill ${d>0.3?"bad":d<-0.15?"ok":""}">${d>0?"+":""}${Math.round(d*100)}%</span>`}</td>
+        <td>${spark(x.hs)}</td></tr>`}).join("")}
+    </tbody></table></div>
+    <div class="meta">"vs anterior" compara o custo por resultado com o relatório importado antes deste. Subir mais de 30% acende alerta.</div>
+  </div>
+  <div class="panel" style="margin-top:18px"><h3>Campanhas de cada cliente</h3><div class="meta">Toque no cliente pra abrir as campanhas: status, investido, resultados e custo por resultado.</div>
+    <div class="grid2">${cs.map(c=>`<div><div class="t" style="margin-bottom:4px">${esc(c.nome)}</div>${campResumo(c)}</div>`).join("")}</div></div>
+  ${mode==="deborah"?`<details class="camp" style="margin-top:18px"><summary><b>Receber o relatório por e-mail todo dia</b></summary>
+    <ol class="meta" style="display:block;line-height:1.7;margin:8px 0 0;padding-left:18px">
+      <li>No Gerenciador de Anúncios, abra <b>Relatórios de anúncios</b> e crie um relatório por campanha com as colunas: Nome da conta, Nome da campanha, Veiculação, Resultados, Custo por resultado, Valor usado, Impressões.</li>
+      <li>Salve o relatório e clique no ícone de compartilhar, em <b>Agendar envio por e-mail</b>.</li>
+      <li>Escolha <b>diário</b>, formato <b>.xlsx</b> ou <b>.csv</b>, e o seu e-mail.</li>
+      <li>Todo dia, baixe o anexo do e-mail e importe aqui. Uma conta de anúncio por cliente; o painel lembra quem é quem.</li>
+    </ol></details>`:""}`;
+}
+
+const VIEWS={resultados:vResultados,hresultados:vResultados,plumen:()=>vProspeccao("lumen"),pagencia:()=>vProspeccao("agencia"),hleads:vHLeads,hoje:vHoje,tarefas:vTarefas,saldos:vSaldos,reunioes:vReunioes,projetos:vProjetos,financeiro:vFinanceiro,humberto:vHumberto,hprojetos:vHProjetos};
+function render(){
+  const ae=document.activeElement, aid=ae&&ae.id, keep={};
+  document.querySelectorAll("#view input,#view select,#view textarea").forEach(el=>{if(el.id)keep[el.id]=(el.type==="checkbox"||el.type==="file")?null:el.value});
+  $("#view").innerHTML=VIEWS[tab]();
+  for(const id in keep){const el=document.getElementById(id);if(el&&keep[id]!==null&&!el.closest("[data-recform]")&&el.type!=="checkbox")el.value=keep[id]}
+  if(aid){const el=document.getElementById(aid);if(el)el.focus()}
+  fillQRs();
+  document.querySelectorAll("#nav a").forEach(a=>{a.setAttribute("aria-current",a.dataset.tab===tab?"page":"false");a.hidden=a.dataset.m!==mode});
+  $("#mDeb").setAttribute("aria-pressed",mode==="deborah");$("#mHum").setAttribute("aria-pressed",mode==="humberto");
+}
+function setMode(m){mode=m;try{localStorage.setItem("qg-mode",m)}catch(e){}}
+function route(){
+  let h=location.hash.replace("#","");
+  if(h==="deborah")h="hoje";
+  if(!VIEWS[h])h=mode==="humberto"?"humberto":"hoje";
+  setMode(HUM_TABS.includes(h)?"humberto":"deborah");
+  tab=h;armed=null;render();
+}
+
+/* ---------- eventos ---------- */
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("button,input[type=checkbox]"); if(!b)return;
+  if(b.dataset.del){ if(armed===b.dataset.del){const[c,id]=b.dataset.del.split("/");armed=null;await apagar(c,id)}else{armed=b.dataset.del;render()} return }
+  if(b.dataset.mode){const m=b.dataset.mode;if(m!==mode){setMode(m);location.hash=m==="humberto"?"humberto":"hoje"}return}
+  if(b.dataset.filtro){tarefaFiltro=b.dataset.filtro;render();return}
+  if(b.dataset.copy){const a=achar(b.dataset.copy);if(!a||!a.p)return;
+    const done=()=>toast("Pix copiado. Cola no WhatsApp do cliente.");
+    const fallback=()=>{const code=b.closest(".pix").querySelector("code");const r=document.createRange();r.selectNodeContents(code);const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Código selecionado. Copie com o menu do aparelho.")};
+    try{navigator.clipboard.writeText(a.p.codigo).then(done,fallback)}catch(err){fallback()} return}
+  if(b.dataset.dl){const a=achar(b.dataset.dl);if(a&&a.p)baixarQR(a.c,a.s);return}
+  if(b.dataset.edit){openEdit=openEdit===b.dataset.edit?null:b.dataset.edit;openRecharge=null;render();return}
+  if(b.dataset.xadd){await adicionarImport(b.dataset.xadd);return}
+  if(b.dataset.xcancel){pendImp=null;render();return}
+  if(b.dataset.liberar){const sep=S.leads.filter(x=>x.status==="separado"&&x.projeto===b.dataset.liberar);for(const x of sep){await salvar("leads",x.id,{status:"liberado",liberadoEm:Date.now()})}toast(sep.length+" liberados pro Humberto");return}
+  if(b.dataset.export){exportLeads(b.dataset.export);return}
+  if(b.dataset.res){const[id,r]=b.dataset.res.split("|");await registrarResultado(id,r);return}
+  if(b.dataset.undo){const l=S.leads.find(x=>x.id===b.dataset.undo);if(!l)return;const hist=(l.historico||[]).slice(0,-1);const ant=hist.slice(-1)[0];
+    await salvar("leads",l.id,{historico:hist,status:ant?ant.resultado:"liberado",proximoContato:ant&&PROX[ant.resultado]?proxProsp(addDays(ant.data,PROX[ant.resultado])):""});toast("Desfeito");return}
+  if(b.dataset.txt){const k=b.dataset.txt,ls=leadsHoje(k);if(!ls.length){toast("Nenhum contato pra hoje.");return}
+    const dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null;if(!dl){toast("Download indisponível aqui. Use o Copiar.");return}
+    try{await dl.save({filename:"contatos-"+(k==="lumen"?"lumen":"captacao")+"-"+hoje()+".txt",data:txtLeads(ls)+"\n"});toast("Lista salva")}catch(e){if(e&&e.code!=="declined")toast("Não deu pra salvar a lista.")}return}
+  if(b.dataset.txtcopy){const t=txtLeads(leadsHoje(b.dataset.txtcopy));if(!t){toast("Nenhum contato pra hoje.");return}
+    try{navigator.clipboard.writeText(t).then(()=>toast("Lista copiada"),()=>toast("Não deu pra copiar. Use o Baixar .txt."))}catch(e){toast("Não deu pra copiar. Use o Baixar .txt.")}return}
+  if(b.dataset.laba){leadsAba=b.dataset.laba;render();return}
+  if(b.dataset.impsave){await salvarImport();return}
+  if(b.dataset.impcancel){imp=null;render();return}
+  if(b.dataset.valores){const id=b.dataset.valores;const vr=document.getElementById("vr-"+id).value,al=document.getElementById("al-"+id).value;
+    const rd=+document.getElementById("rd-"+id).value===3?3:1;
+    const rdias=[0,1,2,3,4,5,6].filter(w=>{const el=document.getElementById("rw-"+id+"-"+w);return el&&el.checked});
+    let link=((document.getElementById("lk-"+id)||{}).value||"").trim();
+    if(link&&!/^https:\/\/([a-z0-9-]+\.)*facebook\.com\//i.test(link)){toast("O link precisa ser do Facebook (facebook.com).");return}
+    link=link.replace(/([?&])session_id=[^&]*&?/,"$1").replace(/[?&]$/,"");
+    await salvar("clientes",id,{valorRecarga:parseFloat(vr)||0,alertaAbaixo:parseFloat(al)||0,recargasDia:rd,recargaDias:rdias,linkSaldo:link});toast("Valores salvos");return}
+  if(b.dataset.clearpix){const[id,s]=b.dataset.clearpix.split("|");const c=S.clientes.find(x=>x.id===id);const up={pix:{[s]:{codigo:"",geradoEm:""}}};
+    if(c&&recargaDevida(c))up.ultimaRecarga=hoje();await salvar("clientes",id,up);return}
+  if(b.dataset.pede){const c=S.clientes.find(x=>x.id===b.dataset.pede);if(!c)return;const on=!pedido(c);
+    await salvar("clientes",c.id,{pedidoSaldo:{em:on?Date.now():0}});toast(on?"Avisado: falta saldo em "+c.nome:"Pedido retirado");return}
+  if(b.dataset.pedok){await salvar("clientes",b.dataset.pedok,{pedidoSaldo:{em:0}});toast("Pedido atendido");return}
+  if(b.dataset.cancagr){await salvar("clientes",b.dataset.cancagr,{recargaAgendada:{data:"",valor:0}});toast("Agendamento cancelado");return}
+  if(b.dataset.recok){await salvar("clientes",b.dataset.recok,{ultimaRecarga:hoje()});toast("Recarga registrada");return}
+  if(b.dataset.agenda){const d=b.dataset.agenda,ordem=["trabalho","feriado","folga"],atual=tipoDia(d),novo=ordem[(ordem.indexOf(atual)+1)%3];
+    const dias={...agenda()};if(novo===tipoPadrao(d))delete dias[d];else dias[d]=novo;
+    try{await db.collection("config").doc("agenda").set({dias});toast(dataCurta(d)+": "+TIPO[novo].t)}catch(e){setStatus("Não deu pra salvar a agenda.",true)}return}
+  if(b.dataset.rec){openEdit=null;openRecharge=openRecharge===b.dataset.rec?null:b.dataset.rec;render();return}
+  if(b.dataset.toggle){const t=S.tarefas.find(x=>x.id===b.dataset.toggle);if(t)await salvar("tarefas",t.id,{status:t.status==="feita"?"aberta":"feita",feitaEm:t.status==="feita"?null:Date.now()});return}
+  if(b.dataset.etapa){const[pid,i]=b.dataset.etapa.split("|");const p=S.projetos.find(x=>x.id===pid);if(!p)return;const et=(p.etapas||[]).map((x,j)=>j==+i?{...x,feita:!x.feita}:x);await salvar("projetos",pid,{etapas:et});return}
+  if(b.dataset.pago){const f=S.financeiro.find(x=>x.id===b.dataset.pago);if(!f)return;
+    if(f.recorrente)await salvar("financeiro",f.id,{venc:addMonth(f.venc),ultimoPagamento:hoje()});
+    else await salvar("financeiro",f.id,{status:"pago",pagoEm:hoje()});return}
+});
+document.addEventListener("submit",async e=>{
+  e.preventDefault(); const f=e.target; const v=id=>(document.getElementById(id)||{}).value||"";
+  if(f.id==="fTarefa"){await salvar("tarefas",null,{titulo:v("tTitulo").trim(),responsavel:v("tResp"),prazo:v("tPrazo"),projeto:v("tProj"),status:"aberta",criadoEm:Date.now()});f.reset()}
+  else if(f.id==="fDebTarefa"){await salvar("tarefas",null,{titulo:v("dTitulo").trim(),responsavel:v("dResp")||"Deborah",prazo:v("dPrazo"),projeto:"",status:"aberta",criadoEm:Date.now()});f.reset()}
+  else if(f.id==="fHumDitar"){await salvar("tarefas",null,{titulo:v("hTitulo").trim(),responsavel:v("hResp")||"Deborah",prazo:v("hPrazo"),projeto:"",status:"aberta",criadoEm:Date.now(),ditadoPor:"Humberto"});f.reset()}
+  else if(f.id==="fReuniao"){await salvar("reunioes",null,{titulo:v("rTitulo").trim(),com:v("rCom"),data:v("rData"),hora:v("rHora"),local:v("rLocal"),notas:v("rNotas"),criadoEm:Date.now()});f.reset()}
+  else if(f.id==="fProjeto"){await salvar("projetos",null,{nome:v("pNome").trim(),status:v("pStatus"),descricao:v("pDesc"),etapas:[],arquitetura:[],ordem:50});f.reset()}
+  else if(f.id==="fFin"){await salvar("financeiro",null,{tipo:v("fTipo"),descricao:v("fDesc").trim(),cliente:v("fCli"),valor:parseFloat(v("fValor"))||0,venc:v("fVenc"),recorrente:document.getElementById("fRec").checked,status:"aberto",criadoEm:Date.now()});f.reset()}
+  else if(f.dataset.addetapa){const pid=f.dataset.addetapa;const nome=v("ne-"+pid).trim();if(!nome)return;const p=S.projetos.find(x=>x.id===pid);await salvar("projetos",pid,{etapas:[...(p.etapas||[]),{nome,feita:false}]});f.reset()}
+  else if(f.id==="fVenda"){const dado={data:v("vData")||hoje(),cliente:v("vCli").trim(),projeto:v("vProj"),valor:parseFloat(v("vValor"))||0,descricao:v("vDesc").trim(),criadoEm:Date.now()};
+    f.reset();document.getElementById("vData").value=hoje();await salvar("vendas",null,dado);toast("Venda registrada")}
+  else if(f.dataset.rodform){const k=f.dataset.rodform;const lista=v("rod-"+k).split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+    try{await db.collection("config").doc(PROSP[k].cfg).set({lista});toast("Sugestões salvas")}catch(e){setStatus("Não deu pra salvar as sugestões.",true)}}
+  else if(f.dataset.leadform){const k=f.dataset.leadform,P=PROSP[k];
+    const proj=P.proj,cnae=v("lc-"+k).trim(),lib=document.getElementById("ll-"+k).checked,canal=P.canais?v("lk-"+k):"ligacao";
+    const linhas=v("lt-"+k).split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+    const paraDia=proxProsp(v("pd-"+k)||hoje());
+    const tels=new Set(S.leads.filter(x=>x.projeto===proj).map(x=>telLimpo(x.telefone)).filter(Boolean));let n=0,dup=0;
+    document.getElementById("lt-"+k).value="";
+    for(const ln of linhas){const p=ln.split(/\s*[;\t|]\s*/);const nome=(p[0]||"").trim();if(!nome)continue;
+      const tel=(p[1]||"").trim();if(tel&&tels.has(telLimpo(tel))){dup++;continue}tels.add(telLimpo(tel));
+      await salvar("leads",null,{nome,telefone:tel,cidade:(p[2]||"").trim(),cnae,projeto:proj,canal,paraDia,porte:k==="lumen"?"MEI":"",status:lib?"liberado":"separado",historico:[],proximoContato:"",criadoEm:Date.now(),liberadoEm:lib?Date.now():null});n++}
+    toast(n+" contato"+(n===1?"":"s")+" adicionado"+(n===1?"":"s")+(dup?" · "+dup+" repetido"+(dup===1?"":"s")+" ignorado"+(dup===1?"":"s"):""))}
+  else if(f.dataset.saldoform){const id=f.dataset.saldoform;const val=v("sa-"+id);if(val==="")return;f.reset();
+    await salvar("clientes",id,{saldoAtual:parseFloat(val)||0,saldoAtualizadoEm:Date.now()});toast("Saldo atualizado")}
+  else if(f.dataset.pixform){const[id,s]=f.dataset.pixform.split("|");const code=v("px-"+id+"-"+s).replace(/[\r\n\t]+/g,"").trim();
+    const quando=v("pq-"+id+"-"+s)||hoje(), valor=parseFloat(v("pv-"+id+"-"+s))||0;
+    if(!code){if(quando<=hoje()){toast("Cole o Pix pra hoje, ou escolha o próximo dia útil pra só agendar.");return}
+      f.reset();await salvar("clientes",id,{recargaAgendada:{data:quando,valor}});toast("Recarga agendada pra "+dataCurta(quando));return}
+    if(!code.startsWith("000201")){toast("Esse código não parece um Pix copia e cola. Confira e cole de novo.");return}
+    f.reset();await salvar("clientes",id,{pix:{[s]:{codigo:code,geradoEm:hoje(),paraDia:quando>hoje()?quando:"",valor}},recargaAgendada:{data:"",valor:0},pedidoSaldo:{em:0}});
+    toast(quando>hoje()?"Pix salvo. O Humberto vê em "+dataCurta(quando)+".":"Pix salvo. O Humberto já vê na área dele.")}
+  else if(f.dataset.editform){const id=f.dataset.editform;const c=S.clientes.find(x=>x.id===id);if(!c)return;
+    const up={ciclo:Math.max(1,parseInt(v("ec-"+id))||1),pixValor:parseFloat(v("ev-"+id))||0};
+    const code=v("ep-"+id).replace(/[\r\n\t]+/g,"").trim();
+    if(code&&!code.startsWith("000201")){toast("Esse código não parece um Pix copia e cola. Confira e cole de novo.");return}
+    if(code!==(c.pixCodigo||"")){up.pixCodigo=code;up.pixGeradoEm=code?hoje():""}
+    const sv=v("es-"+id);if(sv!==""){up.saldoAtual=parseFloat(sv)||0;up.saldoAtualizadoEm=Date.now()}
+    await salvar("clientes",id,up);openEdit=null;render();toast("Cliente atualizado")}
+  else if(f.dataset.recform){const id=f.dataset.recform;const c=S.clientes.find(x=>x.id===id);if(!c)return;
+    const valor=parseFloat(v("rv-"+id))||0,data=v("rd-"+id)||hoje(),prox=v("rp-"+id),prev=parseFloat(v("rx-"+id))||0;
+    await salvar("saldos",null,{clienteId:id,cliente:c.nome,valor,data,obs:v("ro-"+id),por:"Deborah",criadoEm:Date.now()});
+    await salvar("clientes",id,{ultimaData:data,ultimoValor:valor,proxima:prox,valorPrevisto:prev});
+    openRecharge=null;render()}
+});
+window.addEventListener("hashchange",route);
+
+/* ---------- dados ---------- */
+$("#hojeTxt").textContent=new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"});
+route();
+(async()=>{
+  if(!window.claude||!window.claude.use){setStatus("Abra este painel pelo Claude, logado na conta, para ver e salvar os dados.",true);return}
+  db=await window.claude.use("db");
+  if(!db){setStatus("O banco do painel não está disponível nesta visualização. Abra logado na conta.",true);return}
+  let pend=new Set(COLS);
+  const timer=setTimeout(()=>{if(pend.size)setStatus("Os dados estão demorando pra chegar. Confira a conexão; o painel atualiza sozinho.",true)},10000);
+  COLS.forEach(c=>{
+    db.collection(c).onSnapshot(snap=>{
+      S[c]=snap.docs.map(d=>({id:d.id,...d.data()}));
+      if(!snap.metadata.fromCache){pend.delete(c);if(!pend.size){clearTimeout(timer);setStatus("")}}
+      render();
+    },err=>{pend.delete(c);clearTimeout(timer);setStatus("Não deu pra carregar "+c+": "+(err&&err.message||"erro"),true)});
+  });
+})();
+})();
+</script>
