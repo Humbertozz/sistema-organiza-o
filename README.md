@@ -2,7 +2,13 @@
 
 Painel do escritório Latinos: a Deborah organiza e o Humberto acompanha.
 
-- **Modo Deborah:** pendências, saldos e Pix dos clientes, prospecção (Lumen ERP e Captação), resultados do Facebook, reuniões, operações externas e projetos.
-- **Modo Humberto:** só acompanhamento: pendências pra concluir, Pix pra repassar, contatos pra ligar, pedidos de saldo, resultados e andamento dos projetos.
+Site: https://humbertozz.github.io/sistema-organiza-o/
 
-O arquivo `index.html` é a página publicada como artifact no claude.ai. Os dados (clientes, leads, Pix, vendas) ficam no banco do artifact e **não** estão neste repositório.
+- **Modo Deborah:** pendências, saldos e Pix dos clientes, prospecção (Lumen ERP e Captação), resultados do Facebook, reuniões, operações externas e projetos.
+- **Modo Humberto:** pendências pra concluir, Pix pra repassar, contatos pra ligar, pedidos de saldo, resultados e andamento dos projetos.
+
+## Como funciona
+
+- `index.html` é o painel inteiro (uma página só).
+- Os dados ficam no Supabase, na tabela `cc_docs`, protegida por login. Só os e-mails cadastrados na tabela `cc_acesso` conseguem ler ou gravar.
+- Nenhum dado de cliente fica neste repositório. A chave que aparece no código é a chave pública do Supabase, que sozinha não dá acesso a nada.

@@ -1,3 +1,10 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Central de Controle</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -146,11 +153,33 @@ input[type="file"]{padding:6px;font-size:13px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;z-index:20}
 </style>
 
-<header>
+<style>
+#login{min-height:100vh;display:grid;place-items:center;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px}
+#login .card{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:14px}
+#login h1{margin:0;font-size:22px;letter-spacing:-.01em}
+#login h1 span{color:var(--accent)}
+#login p{margin:0;color:var(--muted);font-size:14px}
+#login input{width:100%}
+#lgErr{color:var(--bad);font-size:13.5px;min-height:1em}
+</style>
+</head>
+<body>
+<section id="login" hidden>
+  <form class="card" id="fLogin" autocomplete="on">
+    <h1>Central de <span>Controle</span></h1>
+    <p>Entre com o e-mail e a senha liberados pro escritório.</p>
+    <label class="f">E-mail<input id="lgEmail" type="email" autocomplete="username" required></label>
+    <label class="f">Senha<input id="lgSenha" type="password" autocomplete="current-password" required></label>
+    <div id="lgErr" role="alert"></div>
+    <button class="pri" type="submit" id="lgBtn">Entrar</button>
+  </form>
+</section>
+
+<header hidden>
   <div class="wrap">
     <div class="top">
       <div class="brand">Central de <span>Controle</span></div>
-      <div class="topr"><span class="today" id="hojeTxt"></span>
+      <div class="topr"><span class="today" id="hojeTxt"></span><button type="button" class="ghost" id="sair" title="Sair">Sair</button>
         <div class="seg mode" role="group" aria-label="Quem está usando"><button data-mode="deborah" id="mDeb">Deborah</button><button data-mode="humberto" id="mHum">Humberto</button></div></div>
     </div>
     <nav id="nav" aria-label="Seções">
@@ -171,7 +200,7 @@ input[type="file"]{padding:6px;font-size:13px}
   </div>
 </header>
 
-<main class="wrap">
+<main class="wrap" hidden>
   <div id="status" class="note">Carregando os dados do painel…</div>
   <section id="view"></section>
 </main>
@@ -179,6 +208,7 @@ input[type="file"]{padding:6px;font-size:13px}
 <div class="toast" id="toast" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 (function(){
 const COLS=["tarefas","reunioes","projetos","financeiro","clientes","saldos","campanhas","config","leads","vendas","resultados"];
@@ -313,7 +343,7 @@ async function baixarQR(c,s){
   g.textAlign="center";g.font="600 28px sans-serif";g.fillText(c.nome+(SLOT_NOME[s]?" ("+SLOT_NOME[s]+")":"")+(valorPix(c,p)?" · "+brl(valorPix(c,p)):""),W/2,size+95);
   g.font="20px sans-serif";g.fillStyle="#444444";g.fillText("Pix para saldo de anúncios (Meta) · gerado "+br(p.geradoEm),W/2,size+135);
   const blob=await new Promise(r=>cv.toBlob(r,"image/png"));
-  const dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null;
+  const dl=webDL;
   if(!dl){toast("Download indisponível aqui. Use o Copiar Pix.");return}
   try{await dl.save({filename:"pix-"+c.id+(s!=="unico"?"-"+s:"")+".png",data:blob});toast("QR salvo")}catch(e){if(e&&e.code!=="declined")toast("Não deu pra salvar o QR.")}
 }
@@ -562,7 +592,7 @@ async function exportLeads(proj){
   if(!base.length){toast("Nenhum lead nesse filtro.");return}
   const q=s=>'"'+String(s??"").replace(/"/g,'""')+'"';
   const csv="nome,telefone,cidade,projeto,cnae,situacao,proximo_contato\n"+base.map(x=>[x.nome,x.telefone,x.cidade,x.projeto,x.cnae,(ST[x.status]||{}).t,x.proximoContato].map(q).join(",")).join("\n");
-  const dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null;
+  const dl=webDL;
   if(!dl){toast("Download indisponível aqui.");return}
   try{await dl.save({filename:"leads-"+(proj==="Lumen ERP"?"lumen":"agencia")+"-"+hoje()+".csv",data:"﻿"+csv});toast("Lista salva")}catch(e){if(e&&e.code!=="declined")toast("Não deu pra salvar a lista.")}
 }
@@ -955,7 +985,7 @@ document.addEventListener("click",async e=>{
   if(b.dataset.undo){const l=S.leads.find(x=>x.id===b.dataset.undo);if(!l)return;const hist=(l.historico||[]).slice(0,-1);const ant=hist.slice(-1)[0];
     await salvar("leads",l.id,{historico:hist,status:ant?ant.resultado:"liberado",proximoContato:ant&&PROX[ant.resultado]?proxProsp(addDays(ant.data,PROX[ant.resultado])):""});toast("Desfeito");return}
   if(b.dataset.txt){const k=b.dataset.txt,ls=leadsHoje(k);if(!ls.length){toast("Nenhum contato pra hoje.");return}
-    const dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null;if(!dl){toast("Download indisponível aqui. Use o Copiar.");return}
+    const dl=webDL;if(!dl){toast("Download indisponível aqui. Use o Copiar.");return}
     try{await dl.save({filename:"contatos-"+(k==="lumen"?"lumen":"captacao")+"-"+hoje()+".txt",data:txtLeads(ls)+"\n"});toast("Lista salva")}catch(e){if(e&&e.code!=="declined")toast("Não deu pra salvar a lista.")}return}
   if(b.dataset.txtcopy){const t=txtLeads(leadsHoje(b.dataset.txtcopy));if(!t){toast("Nenhum contato pra hoje.");return}
     try{navigator.clipboard.writeText(t).then(()=>toast("Lista copiada"),()=>toast("Não deu pra copiar. Use o Baixar .txt."))}catch(e){toast("Não deu pra copiar. Use o Baixar .txt.")}return}
@@ -1036,19 +1066,79 @@ window.addEventListener("hashchange",route);
 /* ---------- dados ---------- */
 $("#hojeTxt").textContent=new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"});
 route();
-(async()=>{
-  if(!window.claude||!window.claude.use){setStatus("Abra este painel pelo Claude, logado na conta, para ver e salvar os dados.",true);return}
-  db=await window.claude.use("db");
-  if(!db){setStatus("O banco do painel não está disponível nesta visualização. Abra logado na conta.",true);return}
+/* ---------- versão web: login e banco no Supabase ---------- */
+const SB_URL="https://eujbnvnkrbkxlkfiuapq.supabase.co", SB_KEY="sb_publishable_ca75dySWNpgUnb5VaWmoOw_FpN20ZSC";
+const HUMBERTO_EMAIL="humbertooliviera21@gmail.com";
+const sb=window.supabase?window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}):null;
+function makeDB(){
+  const cache={}, subs={};
+  const emit=c=>{const m=cache[c]||{};const docs=Object.keys(m).sort().map(id=>({id,exists:true,data:()=>m[id]}));
+    (subs[c]||[]).forEach(fn=>fn({docs,size:docs.length,empty:!docs.length,metadata:{fromCache:false,hasPendingWrites:false}}))};
+  const put=(c,id,data)=>{(cache[c]=cache[c]||{})[id]=data;emit(c)};
+  const drop=(c,id)=>{if(cache[c]&&id in cache[c]){delete cache[c][id];emit(c)}};
+  const err=e=>({code:"unavailable",message:(e&&e.message)||"erro"});
+  const refetch=async(c,id)=>{const{data,error}=await sb.from("cc_docs").select("data").eq("collection",c).eq("id",id).maybeSingle();if(error)throw err(error);data?put(c,id,data.data):drop(c,id)};
+  const rid=()=>(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)).replace(/-/g,"").slice(0,20);
+  let channel=null;
+  function ensureChannel(){if(channel)return;
+    channel=sb.channel("cc_docs").on("postgres_changes",{event:"*",schema:"public",table:"cc_docs"},p=>{
+      const r=(p.new&&p.new.collection)?p.new:p.old;if(!r||!r.collection)return;
+      if(p.eventType==="DELETE")drop(r.collection,r.id);else put(r.collection,r.id,p.new.data)}).subscribe()}
+  function docRef(c,id){return{id,
+    async set(data){const{error}=await sb.from("cc_docs").upsert({collection:c,id,data,updated_at:new Date().toISOString()});if(error)throw err(error);put(c,id,data)},
+    async update(data){const{error}=await sb.rpc("cc_update",{p_collection:c,p_id:id,p_patch:data});if(error)throw err(error);await refetch(c,id)},
+    async delete(){const{error}=await sb.from("cc_docs").delete().eq("collection",c).eq("id",id);if(error)throw err(error);drop(c,id)}}}
+  return{collection(c){return{
+    doc(id){return docRef(c,id||rid())},
+    async add(data){const r=docRef(c,rid());await r.set(data);return r},
+    onSnapshot(next,onErr){(subs[c]=subs[c]||[]).push(next);ensureChannel();
+      (async()=>{const all=[];for(let from=0;;from+=1000){const{data,error}=await sb.from("cc_docs").select("id,data").eq("collection",c).range(from,from+999);
+          if(error){onErr&&onErr(err(error));return}all.push(...data);if(data.length<1000)break}
+        cache[c]={};all.forEach(r=>{cache[c][r.id]=r.data});emit(c)})();
+      return()=>{subs[c]=(subs[c]||[]).filter(f=>f!==next)}}}}};
+}
+const webDL={async save({filename,data}){
+  const tipo=/\.csv$/i.test(filename)?"text/csv;charset=utf-8":/\.txt$/i.test(filename)?"text/plain;charset=utf-8":/\.png$/i.test(filename)?"image/png":"application/octet-stream";
+  const blob=data instanceof Blob?data:new Blob([data],{type:tipo});const u=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),3000);return{status:"saved"}}};
+function iniciarDados(){
+  db=makeDB();
   let pend=new Set(COLS);
-  const timer=setTimeout(()=>{if(pend.size)setStatus("Os dados estão demorando pra chegar. Confira a conexão; o painel atualiza sozinho.",true)},10000);
+  const timer=setTimeout(()=>{if(pend.size)setStatus("Os dados estão demorando pra chegar. Confira a internet; o painel atualiza sozinho.",true)},10000);
   COLS.forEach(c=>{
     db.collection(c).onSnapshot(snap=>{
       S[c]=snap.docs.map(d=>({id:d.id,...d.data()}));
-      if(!snap.metadata.fromCache){pend.delete(c);if(!pend.size){clearTimeout(timer);setStatus("")}}
+      pend.delete(c);if(!pend.size){clearTimeout(timer);setStatus("")}
       render();
     },err=>{pend.delete(c);clearTimeout(timer);setStatus("Não deu pra carregar "+c+": "+(err&&err.message||"erro"),true)});
   });
+}
+(async()=>{
+  const tela=on=>{$("#login").hidden=!on;document.querySelector("header").hidden=on;document.querySelector("main").hidden=on};
+  if(!sb){tela(true);$("#lgErr").textContent="Não consegui carregar o sistema de login. Confira a internet e recarregue a página.";return}
+  let iniciado=false;
+  async function entrar(){
+    const{data:{session}}=await sb.auth.getSession();
+    if(!session){tela(true);return}
+    const{data:ok,error}=await sb.rpc("cc_liberado");
+    if(error||!ok){tela(true);$("#lgErr").textContent="Este e-mail ainda não tem acesso à Central de Controle. Fale com o Humberto.";await sb.auth.signOut();return}
+    tela(false);
+    let salvo=null;try{salvo=localStorage.getItem("qg-mode")}catch(e){}
+    if(!salvo&&!location.hash){const m=(session.user.email||"").toLowerCase()===HUMBERTO_EMAIL?"humberto":"deborah";setMode(m);location.hash=m==="humberto"?"humberto":"hoje"}
+    if(!iniciado){iniciado=true;iniciarDados()}
+  }
+  $("#fLogin").addEventListener("submit",async e=>{e.preventDefault();e.stopPropagation();
+    const btn=$("#lgBtn");btn.disabled=true;$("#lgErr").textContent="";
+    const{error}=await sb.auth.signInWithPassword({email:$("#lgEmail").value.trim(),password:$("#lgSenha").value});
+    btn.disabled=false;
+    if(error){$("#lgErr").textContent=/invalid/i.test(error.message)?"E-mail ou senha incorretos.":"Não deu pra entrar: "+error.message;return}
+    $("#lgSenha").value="";entrar();
+  },true);
+  $("#sair").addEventListener("click",async e=>{e.stopPropagation();await sb.auth.signOut();location.reload()},true);
+  entrar();
 })();
 })();
 </script>
+
+</body>
+</html>
